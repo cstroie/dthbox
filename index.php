@@ -89,187 +89,106 @@ function showUploadForm() {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Image Processor</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
         <style>
-            body {
-                font-family: Arial, sans-serif;
-                max-width: 800px;
-                margin: 0 auto;
-                padding: 20px;
-                background-color: #f5f5f5;
-            }
             .container {
-                background-color: white;
-                padding: 30px;
-                border-radius: 10px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                max-width: 800px;
+                margin: 2rem auto;
+                padding: 0 1rem;
             }
-            h1 {
-                color: #333;
-                text-align: center;
-                margin-bottom: 30px;
+            .tab-content {
+                display: none;
             }
-            .form-group {
-                margin-bottom: 20px;
-            }
-            label {
+            .tab-content.active {
                 display: block;
-                margin-bottom: 5px;
-                font-weight: bold;
-                color: #555;
-            }
-            input[type="text"], input[type="file"], select {
-                width: 100%;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                font-size: 16px;
-                box-sizing: border-box;
-            }
-            input[type="submit"] {
-                background-color: #4CAF50;
-                color: white;
-                padding: 12px 20px;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 16px;
-                width: 100%;
-                margin-top: 10px;
-            }
-            input[type="submit"]:hover {
-                background-color: #45a049;
-            }
-            .section {
-                margin-bottom: 30px;
-                padding: 20px;
-                border: 1px solid #eee;
-                border-radius: 5px;
-            }
-            .section h2 {
-                margin-top: 0;
-                color: #333;
             }
             .note {
-                font-size: 14px;
-                color: #666;
-                font-style: italic;
-            }
-            .tab {
-                overflow: hidden;
-                border: 1px solid #ccc;
-                background-color: #f1f1f1;
-                border-radius: 5px 5px 0 0;
-            }
-            .tab button {
-                background-color: inherit;
-                float: left;
-                border: none;
-                outline: none;
-                cursor: pointer;
-                padding: 14px 16px;
-                transition: 0.3s;
-                font-size: 16px;
-            }
-            .tab button:hover {
-                background-color: #ddd;
-            }
-            .tab button.active {
-                background-color: #ccc;
-            }
-            .tabcontent {
-                display: none;
-                padding: 20px;
-                border: 1px solid #ccc;
-                border-top: none;
-                border-radius: 0 0 5px 5px;
-            }
-            .tabcontent.active {
-                display: block;
+                font-size: 0.9rem;
+                color: var(--pico-muted-color);
             }
         </style>
     </head>
     <body>
-        <div class="container">
+        <main class="container">
             <h1>Image Processor</h1>
             
-            <div class="section">
-                <h2>Upload Image</h2>
+            <div role="tablist">
+                <input type="radio" id="tab-url" name="tabs" checked>
+                <label for="tab-url">Via URL</label>
                 
-                <div class="tab">
-                    <button class="tablinks active" onclick="openTab(event, 'url-tab')">Via URL</button>
-                    <button class="tablinks" onclick="openTab(event, 'file-tab')">Upload File</button>
+                <input type="radio" id="tab-file" name="tabs">
+                <label for="tab-file">Upload File</label>
+                
+                <div class="tab-content active" id="url-content">
+                    <form method="GET" action="">
+                        <div>
+                            <label for="url">Image URL:</label>
+                            <input type="url" id="url" name="url" placeholder="https://example.com/image.jpg">
+                        </div>
+                        <div>
+                            <label for="fmt">Output Format:</label>
+                            <select id="fmt" name="fmt">
+                                <option value="png">PNG</option>
+                                <option value="jpg">JPG</option>
+                                <option value="ppm">PPM</option>
+                                <option value="pbm">PBM</option>
+                                <option value="gif">GIF</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="lvl">Grayscale Levels (2-256):</label>
+                            <input type="number" id="lvl" name="lvl" min="2" max="256" value="256">
+                        </div>
+                        <div>
+                            <label for="res">Resolution (WxH):</label>
+                            <input type="text" id="res" name="res" value="296x128" placeholder="296x128">
+                        </div>
+                        <input type="submit" value="Process Image from URL">
+                    </form>
                 </div>
                 
-                <form id="url-tab" class="tabcontent active" method="GET" action="">
-                    <div class="form-group">
-                        <label for="url">Image URL:</label>
-                        <input type="text" id="url" name="url" placeholder="https://example.com/image.jpg">
-                    </div>
-                    <div class="form-group">
-                        <label for="fmt">Output Format:</label>
-                        <select id="fmt" name="fmt">
-                            <option value="png">PNG</option>
-                            <option value="jpg">JPG</option>
-                            <option value="ppm">PPM</option>
-                            <option value="pbm">PBM</option>
-                            <option value="gif">GIF</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="lvl">Grayscale Levels (2-256):</label>
-                        <input type="number" id="lvl" name="lvl" min="2" max="256" value="256">
-                    </div>
-                    <div class="form-group">
-                        <label for="res">Resolution (WxH):</label>
-                        <input type="text" id="res" name="res" value="296x128" placeholder="296x128">
-                    </div>
-                    <input type="submit" value="Process Image from URL">
-                </form>
-                
-                <form id="file-tab" class="tabcontent" method="POST" action="" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <label for="image">Select Image File:</label>
-                        <input type="file" id="image" name="image" accept="image/*">
-                    </div>
-                    <div class="form-group">
-                        <label for="fmt_file">Output Format:</label>
-                        <select id="fmt_file" name="fmt">
-                            <option value="png">PNG</option>
-                            <option value="jpg">JPG</option>
-                            <option value="ppm">PPM</option>
-                            <option value="pbm">PBM</option>
-                            <option value="gif">GIF</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="lvl_file">Grayscale Levels (2-256):</label>
-                        <input type="number" id="lvl_file" name="lvl" min="2" max="256" value="256">
-                    </div>
-                    <div class="form-group">
-                        <label for="res_file">Resolution (WxH):</label>
-                        <input type="text" id="res_file" name="res" value="296x128" placeholder="296x128">
-                    </div>
-                    <input type="submit" value="Process Uploaded Image">
-                </form>
+                <div class="tab-content" id="file-content">
+                    <form method="POST" action="" enctype="multipart/form-data">
+                        <div>
+                            <label for="image">Select Image File:</label>
+                            <input type="file" id="image" name="image" accept="image/*">
+                        </div>
+                        <div>
+                            <label for="fmt_file">Output Format:</label>
+                            <select id="fmt_file" name="fmt">
+                                <option value="png">PNG</option>
+                                <option value="jpg">JPG</option>
+                                <option value="ppm">PPM</option>
+                                <option value="pbm">PBM</option>
+                                <option value="gif">GIF</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="lvl_file">Grayscale Levels (2-256):</label>
+                            <input type="number" id="lvl_file" name="lvl" min="2" max="256" value="256">
+                        </div>
+                        <div>
+                            <label for="res_file">Resolution (WxH):</label>
+                            <input type="text" id="res_file" name="res" value="296x128" placeholder="296x128">
+                        </div>
+                        <input type="submit" value="Process Uploaded Image">
+                    </form>
+                </div>
             </div>
             
             <p class="note">Note: If no parameters are provided, a random image from our collection will be processed.</p>
-        </div>
+        </main>
         
         <script>
-            function openTab(evt, tabName) {
-                var i, tabcontent, tablinks;
-                tabcontent = document.getElementsByClassName("tabcontent");
-                for (i = 0; i < tabcontent.length; i++) {
-                    tabcontent[i].classList.remove("active");
-                }
-                tablinks = document.getElementsByClassName("tablinks");
-                for (i = 0; i < tablinks.length; i++) {
-                    tablinks[i].classList.remove("active");
-                }
-                document.getElementById(tabName).classList.add("active");
-                evt.currentTarget.classList.add("active");
-            }
+            document.getElementById('tab-url').addEventListener('change', function() {
+                document.getElementById('url-content').classList.add('active');
+                document.getElementById('file-content').classList.remove('active');
+            });
+            
+            document.getElementById('tab-file').addEventListener('change', function() {
+                document.getElementById('file-content').classList.add('active');
+                document.getElementById('url-content').classList.remove('active');
+            });
         </script>
     </body>
     </html>
