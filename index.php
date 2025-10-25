@@ -151,6 +151,7 @@ function showUploadForm() {
                             <option value="jarvis">Jarvis, Judice & Ninke</option>
                             <option value="stucki">Stucki</option>
                             <option value="burkes">Burkes</option>
+                            <option value="bayer2x2">Bayer 2x2</option>
                         </select>
                     </div>
                     <div>
@@ -196,6 +197,7 @@ function showUploadForm() {
                             <option value="jarvis">Jarvis, Judice & Ninke</option>
                             <option value="stucki">Stucki</option>
                             <option value="burkes">Burkes</option>
+                            <option value="bayer2x2">Bayer 2x2</option>
                         </select>
                     </div>
                     <div>
@@ -247,6 +249,7 @@ function showUploadForm() {
                             <option value="jarvis">Jarvis, Judice & Ninke</option>
                             <option value="stucki">Stucki</option>
                             <option value="burkes">Burkes</option>
+                            <option value="bayer2x2">Bayer 2x2</option>
                         </select>
                     </div>
                     <div>
@@ -585,6 +588,9 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherM
                 break;
             case 'burkes':
                 burkesDither($dstImage, $levels, $reduceBleeding);
+                break;
+            case 'bayer2x2':
+                bayer2x2Dither($dstImage, $levels);
                 break;
             default:
                 // Simple quantization for unknown methods
@@ -987,6 +993,43 @@ function stuckiDither($image, $levels, $reduceBleeding = true) {
         
         // Move to next row
         $errors = $nextErrors;
+    }
+}
+
+function bayer2x2Dither($image, $levels) {
+    $width = imagesx($image);
+    $height = imagesy($image);
+    
+    // Calculate quantization step
+    $step = 255 / ($levels - 1);
+    
+    // Bayer 2x2 matrix (values scaled to 0-255 range)
+    $bayerMatrix = [
+        [0, 128],
+        [192, 64]
+    ];
+    
+    for ($y = 0; $y < $height; $y++) {
+        for ($x = 0; $x < $width; $x++) {
+            // Get original pixel value
+            $rgb = imagecolorat($image, $x, $y);
+            $gray = ($rgb >> 16) & 0xFF;
+            
+            // Get threshold from Bayer matrix
+            $threshold = $bayerMatrix[$y % 2][$x % 2];
+            
+            // Apply threshold
+            $adjustedGray = $gray + ($threshold - 128) / 255 * $step;
+            
+            // Quantize to specified number of levels
+            $quantized = round(round($adjustedGray / $step) * $step);
+            // Clamp to valid range
+            $quantized = max(0, min(255, $quantized));
+            
+            // Set the quantized pixel
+            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
+            imagesetpixel($image, $x, $y, $newColor);
+        }
     }
 }
 
