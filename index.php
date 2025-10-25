@@ -2,40 +2,70 @@
 // Fetch and process art images from specified collection
 // Then crop and scale it to 296x128 format and return in specified format
 
-// Get collection from query parameter, default to random selection
-$col = isset($_GET['col']) ? strtolower($_GET['col']) : 'any';
-$allowedCollections = ['apod', 'tic', 'jux', 'veri'];
-
-// If collection is 'any' or not specified, choose randomly from available collections
-if ($col === 'any' || !in_array($col, $allowedCollections)) {
-    $col = $allowedCollections[array_rand($allowedCollections)];
-}
-
-// Get format from query parameter, default to png
-$fmt = isset($_GET['fmt']) ? strtolower($_GET['fmt']) : 'png';
-$allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
-if (!in_array($fmt, $allowedFormats)) {
-    $fmt = 'png'; // Default to png if invalid format
-}
-
-// Get grayscale levels from query parameter, default to 256 (full grayscale)
-$lvl = isset($_GET['lvl']) ? intval($_GET['lvl']) : 256;
-// Clamp levels between 2 and 256
-$lvl = max(2, min(256, $lvl));
-
-// Get resolution from query parameter, default to 296x128
-$res = isset($_GET['res']) ? $_GET['res'] : '296x128';
-// Validate and parse resolution
-if (preg_match('/^(\d+)x(\d+)$/', $res, $matches)) {
-    $targetWidth = intval($matches[1]);
-    $targetHeight = intval($matches[2]);
-    // Ensure reasonable limits to prevent abuse
-    $targetWidth = max(1, min(2000, $targetWidth));
-    $targetHeight = max(1, min(2000, $targetHeight));
+// Check if this is a POST request with image data
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get parameters from POST data or use defaults
+    $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
+    $lvl = isset($_POST['lvl']) ? intval($_POST['lvl']) : 256;
+    $res = isset($_POST['res']) ? $_POST['res'] : '296x128';
+    
+    // Validate and parse resolution
+    if (preg_match('/^(\d+)x(\d+)$/', $res, $matches)) {
+        $targetWidth = intval($matches[1]);
+        $targetHeight = intval($matches[2]);
+        // Ensure reasonable limits to prevent abuse
+        $targetWidth = max(1, min(2000, $targetWidth));
+        $targetHeight = max(1, min(2000, $targetHeight));
+    } else {
+        // Default to 296x128 if invalid format
+        $targetWidth = 296;
+        $targetHeight = 128;
+    }
+    
+    // Clamp levels between 2 and 256
+    $lvl = max(2, min(256, $lvl));
+    
+    // Get allowed formats
+    $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
+    if (!in_array($fmt, $allowedFormats)) {
+        $fmt = 'png'; // Default to png if invalid format
+    }
 } else {
-    // Default to 296x128 if invalid format
-    $targetWidth = 296;
-    $targetHeight = 128;
+    // Get collection from query parameter, default to random selection
+    $col = isset($_GET['col']) ? strtolower($_GET['col']) : 'any';
+    $allowedCollections = ['apod', 'tic', 'jux', 'veri'];
+
+    // If collection is 'any' or not specified, choose randomly from available collections
+    if ($col === 'any' || !in_array($col, $allowedCollections)) {
+        $col = $allowedCollections[array_rand($allowedCollections)];
+    }
+
+    // Get format from query parameter, default to png
+    $fmt = isset($_GET['fmt']) ? strtolower($_GET['fmt']) : 'png';
+    $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
+    if (!in_array($fmt, $allowedFormats)) {
+        $fmt = 'png'; // Default to png if invalid format
+    }
+
+    // Get grayscale levels from query parameter, default to 256 (full grayscale)
+    $lvl = isset($_GET['lvl']) ? intval($_GET['lvl']) : 256;
+    // Clamp levels between 2 and 256
+    $lvl = max(2, min(256, $lvl));
+
+    // Get resolution from query parameter, default to 296x128
+    $res = isset($_GET['res']) ? $_GET['res'] : '296x128';
+    // Validate and parse resolution
+    if (preg_match('/^(\d+)x(\d+)$/', $res, $matches)) {
+        $targetWidth = intval($matches[1]);
+        $targetHeight = intval($matches[2]);
+        // Ensure reasonable limits to prevent abuse
+        $targetWidth = max(1, min(2000, $targetWidth));
+        $targetHeight = max(1, min(2000, $targetHeight));
+    } else {
+        // Default to 296x128 if invalid format
+        $targetWidth = 296;
+        $targetHeight = 128;
+    }
 }
 
 function fetchRandomApodImage() {
@@ -411,8 +441,26 @@ function floydSteinbergDither($image, $levels) {
 }
 
 try {
-    // Fetch random image from specified collection
-    $imageData = fetchRandomImage($col);
+    // Check if this is a POST request with image data
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Check if image file was uploaded
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            // Get image data from uploaded file
+            $imageData = file_get_contents($_FILES['image']['tmp_name']);
+            if ($imageData === false) {
+                throw new Exception('Failed to read uploaded image');
+            }
+        } else {
+            // Try to get image data from POST body
+            $imageData = file_get_contents('php://input');
+            if (empty($imageData)) {
+                throw new Exception('No image data provided');
+            }
+        }
+    } else {
+        // Fetch random image from specified collection
+        $imageData = fetchRandomImage($col);
+    }
     
     // Process the image
     $processedImage = processImage($imageData, $lvl, $targetWidth, $targetHeight);
