@@ -6,7 +6,7 @@
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get parameters from POST data or use defaults
     $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
-    $lvl = isset($_POST['lvl']) ? intval($_POST['lvl']) : 2;
+    $bits = isset($_POST['bits']) ? intval($_POST['bits']) : 1;
     $res = isset($_POST['res']) ? $_POST['res'] : '296x128';
     $ditherMethod = isset($_POST['ditherMethod']) ? $_POST['ditherMethod'] : 'floyd-steinberg';
     $reduceBleeding = isset($_POST['reduceBleeding']) ? (bool)$_POST['reduceBleeding'] : true;
@@ -24,8 +24,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetHeight = 128;
     }
         
-    // Clamp levels between 2 and 256
-    $lvl = max(2, min(256, $lvl));
+    // Clamp bits between 1 and 8
+    $bits = max(1, min(8, $bits));
+    // Convert bits to levels
+    $levels = pow(2, $bits);
         
     // Get allowed formats
     $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
@@ -56,10 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fmt = 'png'; // Default to png if invalid format
     }
 
-    // Get grayscale levels from query parameter, default to 2 (minimal grayscale)
-    $lvl = isset($_GET['lvl']) ? intval($_GET['lvl']) : 2;
-    // Clamp levels between 2 and 256
-    $lvl = max(2, min(256, $lvl));
+    // Get grayscale bits from query parameter, default to 1 (minimal grayscale)
+    $bits = isset($_GET['bits']) ? intval($_GET['bits']) : 1;
+    // Clamp bits between 1 and 8
+    $bits = max(1, min(8, $bits));
+    // Convert bits to levels
+    $levels = pow(2, $bits);
 
     // Get resolution from query parameter, default to 296x128
     $res = isset($_GET['res']) ? $_GET['res'] : '296x128';
@@ -135,8 +139,8 @@ function showUploadForm() {
                         </select>
                     </div>
                     <div>
-                        <label for="lvl_url">Grayscale Levels: <span id="lvl_url_value">2</span></label>
-                        <input type="range" id="lvl_url" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_url_value').textContent = this.value">
+                        <label for="bits_url">Grayscale Bits: <span id="bits_url_value">1</span></label>
+                        <input type="range" id="bits_url" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_url_value').textContent = this.value">
                     </div>
                     <div>
                         <label for="ditherMethod_url">Dithering Method:</label>
@@ -180,8 +184,8 @@ function showUploadForm() {
                         </select>
                     </div>
                     <div>
-                        <label for="lvl_file">Grayscale Levels: <span id="lvl_file_value">2</span></label>
-                        <input type="range" id="lvl_file" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_file_value').textContent = this.value">
+                        <label for="bits_file">Grayscale Bits: <span id="bits_file_value">1</span></label>
+                        <input type="range" id="bits_file" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_file_value').textContent = this.value">
                     </div>
                     <div>
                         <label for="ditherMethod_file">Dithering Method:</label>
@@ -231,8 +235,8 @@ function showUploadForm() {
                         </select>
                     </div>
                     <div>
-                        <label for="lvl_col">Grayscale Levels: <span id="lvl_col_value">2</span></label>
-                        <input type="range" id="lvl_col" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_col_value').textContent = this.value">
+                        <label for="bits_col">Grayscale Bits: <span id="bits_col_value">1</span></label>
+                        <input type="range" id="bits_col" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_col_value').textContent = this.value">
                     </div>
                     <div>
                         <label for="ditherMethod_col">Dithering Method:</label>
@@ -1100,7 +1104,7 @@ try {
     }
     
     // Process the image
-    $processedImage = processImage($imageData, $lvl, $targetWidth, $targetHeight);
+    $processedImage = processImage($imageData, $levels, $targetWidth, $targetHeight);
     
     // Output in specified format
     switch ($fmt) {
