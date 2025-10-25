@@ -6,7 +6,7 @@
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get parameters from POST data or use defaults
     $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
-    $lvl = isset($_POST['lvl']) ? intval($_POST['lvl']) : 256;
+    $lvl = isset($_POST['lvl']) ? intval($_POST['lvl']) : 2;
     $res = isset($_POST['res']) ? $_POST['res'] : '296x128';
     
     // Validate and parse resolution
@@ -54,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fmt = 'png'; // Default to png if invalid format
     }
 
-    // Get grayscale levels from query parameter, default to 256 (full grayscale)
-    $lvl = isset($_GET['lvl']) ? intval($_GET['lvl']) : 256;
+    // Get grayscale levels from query parameter, default to 2 (minimal grayscale)
+    $lvl = isset($_GET['lvl']) ? intval($_GET['lvl']) : 2;
     // Clamp levels between 2 and 256
     $lvl = max(2, min(256, $lvl));
 
@@ -129,8 +129,8 @@ function showUploadForm() {
                         </select>
                     </div>
                     <div>
-                        <label for="lvl_url">Grayscale Levels: <span id="lvl_url_value">256</span></label>
-                        <input type="range" id="lvl_url" name="lvl" min="2" max="256" value="256" oninput="document.getElementById('lvl_url_value').textContent = this.value">
+                        <label for="lvl_url">Grayscale Levels: <span id="lvl_url_value">2</span></label>
+                        <input type="range" id="lvl_url" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_url_value').textContent = this.value">
                     </div>
                     <div>
                         <label for="res_url">Resolution (WxH):</label>
@@ -157,8 +157,8 @@ function showUploadForm() {
                         </select>
                     </div>
                     <div>
-                        <label for="lvl_file">Grayscale Levels: <span id="lvl_file_value">256</span></label>
-                        <input type="range" id="lvl_file" name="lvl" min="2" max="256" value="256" oninput="document.getElementById('lvl_file_value').textContent = this.value">
+                        <label for="lvl_file">Grayscale Levels: <span id="lvl_file_value">2</span></label>
+                        <input type="range" id="lvl_file" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_file_value').textContent = this.value">
                     </div>
                     <div>
                         <label for="res_file">Resolution (WxH):</label>
@@ -191,8 +191,8 @@ function showUploadForm() {
                         </select>
                     </div>
                     <div>
-                        <label for="lvl_col">Grayscale Levels: <span id="lvl_col_value">256</span></label>
-                        <input type="range" id="lvl_col" name="lvl" min="2" max="256" value="256" oninput="document.getElementById('lvl_col_value').textContent = this.value">
+                        <label for="lvl_col">Grayscale Levels: <span id="lvl_col_value">2</span></label>
+                        <input type="range" id="lvl_col" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_col_value').textContent = this.value">
                     </div>
                     <div>
                         <label for="res_col">Resolution (WxH):</label>
