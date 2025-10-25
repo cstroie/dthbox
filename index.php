@@ -88,7 +88,7 @@ function showUploadForm() {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Image Processor</title>
+        <title>DitherBox</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
         <style>
             .container {
@@ -104,7 +104,7 @@ function showUploadForm() {
     </head>
     <body>
         <main class="container">
-            <h1>Image Processor</h1>
+            <h1>DitherBox</h1>
             
             <div class="tab">
                 <button class="tablinks active" onclick="openTab(event, 'url')">Via URL</button>
@@ -202,7 +202,7 @@ function showUploadForm() {
                 </form>
             </div>
             
-            <p class="note">Note: If no parameters are provided, this form will be displayed.</p>
+            <p class="note">Note: DitherBox processes images with customizable dithering and grayscale levels.</p>
         </main>
         
         <script>
