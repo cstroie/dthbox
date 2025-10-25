@@ -434,6 +434,8 @@ try {
             header('Content-Type: image/x-portable-bitmap');
             // PBM format: P4 width height binary_data
             echo "P4\n296 128\n";
+            // Add comment with collection name
+            echo "# " . strtoupper($col) . "\n";
             for ($y = 0; $y < 128; $y++) {
                 $byte = 0;
                 $bitCount = 0;
