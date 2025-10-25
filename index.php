@@ -4,7 +4,7 @@
 
 // Get collection from query parameter, default to apod
 $col = isset($_GET['col']) ? strtolower($_GET['col']) : 'apod';
-$allowedCollections = ['apod', 'tic'];
+$allowedCollections = ['apod', 'tic', 'jux'];
 if (!in_array($col, $allowedCollections)) {
     $col = 'apod'; // Default to apod if invalid collection
 }
@@ -133,10 +133,68 @@ function fetchRandomTicImage() {
     return $imageData;
 }
 
+function fetchRandomJuxImage() {
+    // Fetch the RSS feed
+    $rssUrl = 'https://www.juxtapoz.com/news/?format=feed&type=rss';
+    $rssContent = file_get_contents($rssUrl);
+    
+    if ($rssContent === false) {
+        throw new Exception('Failed to fetch JUX RSS feed');
+    }
+    
+    // Parse the RSS feed
+    $rss = simplexml_load_string($rssContent);
+    
+    if ($rss === false) {
+        throw new Exception('Failed to parse JUX RSS feed');
+    }
+    
+    // Extract image URLs from enclosures
+    $imageUrls = [];
+    foreach ($rss->channel->item as $item) {
+        foreach ($item->enclosure as $enclosure) {
+            $url = (string)$enclosure['url'];
+            // Only include JPG images
+            if (preg_match('/\.(jpg|jpeg)$/i', $url)) {
+                $imageUrls[] = $url;
+            }
+        }
+    }
+    
+    // If no JPG images found, try to extract from description
+    if (empty($imageUrls)) {
+        foreach ($rss->channel->item as $item) {
+            $description = (string)$item->description;
+            // Look for img tags in description
+            if (preg_match_all('/<img[^>]+src=["\']([^"\']+\.(jpg|jpeg))["\'][^>]*>/i', $description, $matches)) {
+                $imageUrls = array_merge($imageUrls, $matches[1]);
+            }
+        }
+    }
+    
+    if (empty($imageUrls)) {
+        throw new Exception('No JPG images found in JUX RSS feed');
+    }
+    
+    // Select a random image
+    $randomImageUrl = $imageUrls[array_rand($imageUrls)];
+    
+    // Fetch the image
+    $imageData = file_get_contents($randomImageUrl);
+    
+    if ($imageData === false) {
+        throw new Exception('Failed to fetch image from JUX');
+    }
+    
+    return $imageData;
+}
+
 function fetchRandomImage($collection) {
     switch ($collection) {
         case 'tic':
             return fetchRandomTicImage();
+        case 'jux':
+            return fetchRandomJuxImage();
         case 'apod':
         default:
             return fetchRandomApodImage();
