@@ -1,6 +1,13 @@
 <?php
 // Fetch and process APOD RSS feed to get a random JPG image
-// Then crop and scale it to 296x128 format and return as grayscale PNG
+// Then crop and scale it to 296x128 format and return in specified format
+
+// Get format from query parameter, default to png
+$format = isset($_GET['format']) ? strtolower($_GET['format']) : 'png';
+$allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
+if (!in_array($format, $allowedFormats)) {
+    $format = 'png'; // Default to png if invalid format
+}
 
 function fetchRandomApodImage() {
     // Fetch the RSS feed
@@ -118,9 +125,66 @@ try {
     // Process the image
     $processedImage = processImage($imageData);
     
-    // Output as PNG
-    header('Content-Type: image/png');
-    imagepng($processedImage);
+    // Output in specified format
+    switch ($format) {
+        case 'jpg':
+        case 'jpeg':
+            header('Content-Type: image/jpeg');
+            imagejpeg($processedImage, null, 90);
+            break;
+        case 'gif':
+            header('Content-Type: image/gif');
+            imagegif($processedImage);
+            break;
+        case 'ppm':
+            header('Content-Type: image/x-portable-pixmap');
+            // PPM format: P6 width height max_color_value binary_data
+            echo "P6\n296 128\n255\n";
+            for ($y = 0; $y < 128; $y++) {
+                for ($x = 0; $x < 296; $x++) {
+                    $rgb = imagecolorat($processedImage, $x, $y);
+                    $r = ($rgb >> 16) & 0xFF;
+                    $g = ($rgb >> 8) & 0xFF;
+                    $b = $rgb & 0xFF;
+                    echo chr($r) . chr($g) . chr($b);
+                }
+                echo "\n";
+            }
+            break;
+        case 'pbm':
+            header('Content-Type: image/x-portable-bitmap');
+            // PBM format: P4 width height binary_data
+            echo "P4\n296 128\n";
+            for ($y = 0; $y < 128; $y++) {
+                $byte = 0;
+                $bitCount = 0;
+                for ($x = 0; $x < 296; $x++) {
+                    $rgb = imagecolorat($processedImage, $x, $y);
+                    $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
+                    // Threshold at 128
+                    $bit = ($gray < 128) ? 1 : 0;
+                    $byte = ($byte << 1) | $bit;
+                    $bitCount++;
+                    
+                    if ($bitCount == 8) {
+                        echo chr($byte);
+                        $byte = 0;
+                        $bitCount = 0;
+                    }
+                }
+                // Handle remaining bits in the row
+                if ($bitCount > 0) {
+                    $byte <<= (8 - $bitCount);
+                    echo chr($byte);
+                }
+            }
+            break;
+        case 'png':
+        default:
+            header('Content-Type: image/png');
+            imagepng($processedImage);
+            break;
+    }
     
     // Clean up
     imagedestroy($processedImage);
