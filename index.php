@@ -9,6 +9,11 @@ if (!in_array($format, $allowedFormats)) {
     $format = 'png'; // Default to png if invalid format
 }
 
+// Get grayscale levels from query parameter, default to 256 (full grayscale)
+$levels = isset($_GET['levels']) ? intval($_GET['levels']) : 256;
+// Clamp levels between 2 and 256
+$levels = max(2, min(256, $levels));
+
 function fetchRandomApodImage() {
     // Fetch the RSS feed
     $rssUrl = 'https://apod.com/feed.rss';
@@ -112,6 +117,25 @@ function processImage($imageData) {
     // Convert to grayscale
     imagefilter($dstImage, IMG_FILTER_GRAYSCALE);
     
+    // Apply quantization to reduce grayscale levels if needed
+    if ($levels < 256) {
+        $step = 255 / ($levels - 1);
+        for ($y = 0; $y < $targetHeight; $y++) {
+            for ($x = 0; $x < $targetWidth; $x++) {
+                $rgb = imagecolorat($dstImage, $x, $y);
+                $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
+                
+                // Quantize to specified number of levels
+                $quantized = round(round($gray / $step) * $step);
+                // Clamp to valid range
+                $quantized = max(0, min(255, $quantized));
+                
+                $newColor = imagecolorallocate($dstImage, $quantized, $quantized, $quantized);
+                imagesetpixel($dstImage, $x, $y, $newColor);
+            }
+        }
+    }
+    
     // Clean up source image
     imagedestroy($srcImage);
     
@@ -161,7 +185,7 @@ try {
                 for ($x = 0; $x < 296; $x++) {
                     $rgb = imagecolorat($processedImage, $x, $y);
                     $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
-                    // Threshold at 128
+                    // Threshold at 128 for binary conversion
                     $bit = ($gray < 128) ? 1 : 0;
                     $byte = ($byte << 1) | $bit;
                     $bitCount++;
