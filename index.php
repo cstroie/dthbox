@@ -8,6 +8,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
     $lvl = isset($_POST['lvl']) ? intval($_POST['lvl']) : 2;
     $res = isset($_POST['res']) ? $_POST['res'] : '296x128';
+    $dither = isset($_POST['dither']) ? (bool)$_POST['dither'] : true;
+    $reduceBleeding = isset($_POST['reduceBleeding']) ? (bool)$_POST['reduceBleeding'] : true;
     
     // Validate and parse resolution
     if (preg_match('/^(\d+)x(\d+)$/', $res, $matches)) {
@@ -74,6 +76,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetHeight = 128;
     }
     
+    // Get dithering and bleeding parameters
+    $dither = isset($_GET['dither']) ? (bool)$_GET['dither'] : true;
+    $reduceBleeding = isset($_GET['reduceBleeding']) ? (bool)$_GET['reduceBleeding'] : true;
+    
     // If no 'col' or 'url' are provided, show the upload form
     if (!isset($_GET['col']) && !isset($_GET['url'])) {
         showUploadForm();
@@ -133,6 +139,18 @@ function showUploadForm() {
                         <input type="range" id="lvl_url" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_url_value').textContent = this.value">
                     </div>
                     <div>
+                        <label>
+                            <input type="checkbox" id="dither_url" name="dither" value="1" checked>
+                            Enable Dithering
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="reduceBleeding_url" name="reduceBleeding" value="1" checked>
+                            Reduce Color Bleeding
+                        </label>
+                    </div>
+                    <div>
                         <label for="res_url">Resolution (WxH):</label>
                         <input type="text" id="res_url" name="res" value="296x128" placeholder="296x128">
                     </div>
@@ -159,6 +177,18 @@ function showUploadForm() {
                     <div>
                         <label for="lvl_file">Grayscale Levels: <span id="lvl_file_value">2</span></label>
                         <input type="range" id="lvl_file" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_file_value').textContent = this.value">
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="dither_file" name="dither" value="1" checked>
+                            Enable Dithering
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="reduceBleeding_file" name="reduceBleeding" value="1" checked>
+                            Reduce Color Bleeding
+                        </label>
                     </div>
                     <div>
                         <label for="res_file">Resolution (WxH):</label>
@@ -193,6 +223,18 @@ function showUploadForm() {
                     <div>
                         <label for="lvl_col">Grayscale Levels: <span id="lvl_col_value">2</span></label>
                         <input type="range" id="lvl_col" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_col_value').textContent = this.value">
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="dither_col" name="dither" value="1" checked>
+                            Enable Dithering
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <input type="checkbox" id="reduceBleeding_col" name="reduceBleeding" value="1" checked>
+                            Reduce Color Bleeding
+                        </label>
                     </div>
                     <div>
                         <label for="res_col">Resolution (WxH):</label>
@@ -509,11 +551,11 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight) {
     
     // Apply Floyd-Steinberg dithering for low levels, otherwise simple quantization
     if ($levels < 256) {
-        if ($levels <= 16) {
+        if ($levels <= 16 && $dither) {
             // Use Floyd-Steinberg dithering for very low color levels
-            floydSteinbergDither($dstImage, $levels);
+            floydSteinbergDither($dstImage, $levels, $reduceBleeding);
         } else {
-            // Simple quantization for higher levels
+            // Simple quantization for higher levels or when dithering is disabled
             $step = 255 / ($levels - 1);
             for ($y = 0; $y < $targetHeight; $y++) {
                 for ($x = 0; $x < $targetWidth; $x++) {
@@ -538,7 +580,7 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight) {
     return $dstImage;
 }
 
-function floydSteinbergDither($image, $levels) {
+function floydSteinbergDither($image, $levels, $reduceBleeding = true) {
     $width = imagesx($image);
     $height = imagesy($image);
     
@@ -567,23 +609,44 @@ function floydSteinbergDither($image, $levels) {
             // Calculate quantization error
             $error = $gray - $quantized;
             
-            // Distribute error using reduced Floyd-Steinberg coefficients
-            // Reduce bleeding by using smaller fractions (half the original values)
-            // Current pixel: 0 (already processed)
-            // Right pixel: 7/32 (instead of 7/16)
-            // Below left: 3/32 (instead of 3/16), Below: 5/32 (instead of 5/16), Below right: 1/32 (instead of 1/16)
-            
-            if ($x + 1 < $width) {
-                $nextErrors[$x + 1] += $error * (7/32);
-            }
-            
-            if ($y + 1 < $height) {
-                if ($x > 0) {
-                    $nextErrors[$x - 1] += $error * (3/32);
-                }
-                $nextErrors[$x] += $error * (5/32);
+            if ($reduceBleeding) {
+                // Distribute error using reduced Floyd-Steinberg coefficients
+                // Reduce bleeding by using smaller fractions (half the original values)
+                // Current pixel: 0 (already processed)
+                // Right pixel: 7/32 (instead of 7/16)
+                // Below left: 3/32 (instead of 3/16), Below: 5/32 (instead of 5/16), Below right: 1/32 (instead of 1/16)
+                
                 if ($x + 1 < $width) {
-                    $nextErrors[$x + 1] += $error * (1/32);
+                    $nextErrors[$x + 1] += $error * (7/32);
+                }
+                
+                if ($y + 1 < $height) {
+                    if ($x > 0) {
+                        $nextErrors[$x - 1] += $error * (3/32);
+                    }
+                    $nextErrors[$x] += $error * (5/32);
+                    if ($x + 1 < $width) {
+                        $nextErrors[$x + 1] += $error * (1/32);
+                    }
+                }
+            } else {
+                // Distribute error using standard Floyd-Steinberg coefficients
+                // Current pixel: 0 (already processed)
+                // Right pixel: 7/16
+                // Below left: 3/16, Below: 5/16, Below right: 1/16
+                
+                if ($x + 1 < $width) {
+                    $nextErrors[$x + 1] += $error * (7/16);
+                }
+                
+                if ($y + 1 < $height) {
+                    if ($x > 0) {
+                        $nextErrors[$x - 1] += $error * (3/16);
+                    }
+                    $nextErrors[$x] += $error * (5/16);
+                    if ($x + 1 < $width) {
+                        $nextErrors[$x + 1] += $error * (1/16);
+                    }
                 }
             }
             
