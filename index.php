@@ -2,11 +2,13 @@
 // Fetch and process art images from specified collection
 // Then crop and scale it to 296x128 format and return in specified format
 
-// Get collection from query parameter, default to apod
-$col = isset($_GET['col']) ? strtolower($_GET['col']) : 'apod';
+// Get collection from query parameter, default to random selection
+$col = isset($_GET['col']) ? strtolower($_GET['col']) : 'any';
 $allowedCollections = ['apod', 'tic', 'jux'];
-if (!in_array($col, $allowedCollections)) {
-    $col = 'apod'; // Default to apod if invalid collection
+
+// If collection is 'any' or not specified, choose randomly from available collections
+if ($col === 'any' || !in_array($col, $allowedCollections)) {
+    $col = $allowedCollections[array_rand($allowedCollections)];
 }
 
 // Get format from query parameter, default to png
