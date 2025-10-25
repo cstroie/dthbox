@@ -154,6 +154,38 @@ function showUploadForm() {
                 color: #666;
                 font-style: italic;
             }
+            .tab {
+                overflow: hidden;
+                border: 1px solid #ccc;
+                background-color: #f1f1f1;
+                border-radius: 5px 5px 0 0;
+            }
+            .tab button {
+                background-color: inherit;
+                float: left;
+                border: none;
+                outline: none;
+                cursor: pointer;
+                padding: 14px 16px;
+                transition: 0.3s;
+                font-size: 16px;
+            }
+            .tab button:hover {
+                background-color: #ddd;
+            }
+            .tab button.active {
+                background-color: #ccc;
+            }
+            .tabcontent {
+                display: none;
+                padding: 20px;
+                border: 1px solid #ccc;
+                border-top: none;
+                border-radius: 0 0 5px 5px;
+            }
+            .tabcontent.active {
+                display: block;
+            }
         </style>
     </head>
     <body>
@@ -161,15 +193,21 @@ function showUploadForm() {
             <h1>Image Processor</h1>
             
             <div class="section">
-                <h2>Upload Image via URL</h2>
-                <form method="GET" action="">
+                <h2>Upload Image</h2>
+                
+                <div class="tab">
+                    <button class="tablinks active" onclick="openTab(event, 'url-tab')">Via URL</button>
+                    <button class="tablinks" onclick="openTab(event, 'file-tab')">Upload File</button>
+                </div>
+                
+                <form id="url-tab" class="tabcontent active" method="GET" action="">
                     <div class="form-group">
                         <label for="url">Image URL:</label>
                         <input type="text" id="url" name="url" placeholder="https://example.com/image.jpg">
                     </div>
                     <div class="form-group">
-                        <label for="fmt_url">Output Format:</label>
-                        <select id="fmt_url" name="fmt">
+                        <label for="fmt">Output Format:</label>
+                        <select id="fmt" name="fmt">
                             <option value="png">PNG</option>
                             <option value="jpg">JPG</option>
                             <option value="ppm">PPM</option>
@@ -178,20 +216,17 @@ function showUploadForm() {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="lvl_url">Grayscale Levels (2-256):</label>
-                        <input type="number" id="lvl_url" name="lvl" min="2" max="256" value="256">
+                        <label for="lvl">Grayscale Levels (2-256):</label>
+                        <input type="number" id="lvl" name="lvl" min="2" max="256" value="256">
                     </div>
                     <div class="form-group">
-                        <label for="res_url">Resolution (WxH):</label>
-                        <input type="text" id="res_url" name="res" value="296x128" placeholder="296x128">
+                        <label for="res">Resolution (WxH):</label>
+                        <input type="text" id="res" name="res" value="296x128" placeholder="296x128">
                     </div>
                     <input type="submit" value="Process Image from URL">
                 </form>
-            </div>
-            
-            <div class="section">
-                <h2>Upload Image File</h2>
-                <form method="POST" action="" enctype="multipart/form-data">
+                
+                <form id="file-tab" class="tabcontent" method="POST" action="" enctype="multipart/form-data">
                     <div class="form-group">
                         <label for="image">Select Image File:</label>
                         <input type="file" id="image" name="image" accept="image/*">
@@ -220,6 +255,22 @@ function showUploadForm() {
             
             <p class="note">Note: If no parameters are provided, a random image from our collection will be processed.</p>
         </div>
+        
+        <script>
+            function openTab(evt, tabName) {
+                var i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].classList.remove("active");
+                }
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].classList.remove("active");
+                }
+                document.getElementById(tabName).classList.add("active");
+                evt.currentTarget.classList.add("active");
+            }
+        </script>
     </body>
     </html>
     <?php
