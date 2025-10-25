@@ -4,7 +4,7 @@
 
 // Get collection from query parameter, default to random selection
 $col = isset($_GET['col']) ? strtolower($_GET['col']) : 'any';
-$allowedCollections = ['apod', 'tic', 'jux'];
+$allowedCollections = ['apod', 'tic', 'jux', 'veri'];
 
 // If collection is 'any' or not specified, choose randomly from available collections
 if ($col === 'any' || !in_array($col, $allowedCollections)) {
@@ -191,12 +191,70 @@ function fetchRandomJuxImage() {
     return $imageData;
 }
 
+function fetchRandomVeriImage() {
+    // Fetch the RSS feed
+    $rssUrl = 'https://veriartem.com/feed/';
+    $rssContent = file_get_contents($rssUrl);
+    
+    if ($rssContent === false) {
+        throw new Exception('Failed to fetch VERI RSS feed');
+    }
+    
+    // Parse the RSS feed
+    $rss = simplexml_load_string($rssContent);
+    
+    if ($rss === false) {
+        throw new Exception('Failed to parse VERI RSS feed');
+    }
+    
+    // Extract image URLs from enclosures
+    $imageUrls = [];
+    foreach ($rss->channel->item as $item) {
+        foreach ($item->enclosure as $enclosure) {
+            $url = (string)$enclosure['url'];
+            // Only include JPG images
+            if (preg_match('/\.(jpg|jpeg)$/i', $url)) {
+                $imageUrls[] = $url;
+            }
+        }
+    }
+    
+    // If no JPG images found, try to extract from description
+    if (empty($imageUrls)) {
+        foreach ($rss->channel->item as $item) {
+            $description = (string)$item->description;
+            // Look for img tags in description
+            if (preg_match_all('/<img[^>]+src=["\']([^"\']+\.(jpg|jpeg))["\'][^>]*>/i', $description, $matches)) {
+                $imageUrls = array_merge($imageUrls, $matches[1]);
+            }
+        }
+    }
+    
+    if (empty($imageUrls)) {
+        throw new Exception('No JPG images found in VERI RSS feed');
+    }
+    
+    // Select a random image
+    $randomImageUrl = $imageUrls[array_rand($imageUrls)];
+    
+    // Fetch the image
+    $imageData = file_get_contents($randomImageUrl);
+    
+    if ($imageData === false) {
+        throw new Exception('Failed to fetch image from VERI');
+    }
+    
+    return $imageData;
+}
+
 function fetchRandomImage($collection) {
     switch ($collection) {
         case 'tic':
             return fetchRandomTicImage();
         case 'jux':
             return fetchRandomJuxImage();
+        case 'veri':
+            return fetchRandomVeriImage();
         case 'apod':
         default:
             return fetchRandomApodImage();
