@@ -232,21 +232,27 @@ function processImage($imageData, $levels) {
     // Convert to grayscale
     imagefilter($dstImage, IMG_FILTER_GRAYSCALE);
     
-    // Apply quantization to reduce grayscale levels if needed
+    // Apply Floyd-Steinberg dithering for low levels, otherwise simple quantization
     if ($levels < 256) {
-        $step = 255 / ($levels - 1);
-        for ($y = 0; $y < $targetHeight; $y++) {
-            for ($x = 0; $x < $targetWidth; $x++) {
-                $rgb = imagecolorat($dstImage, $x, $y);
-                $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
-                
-                // Quantize to specified number of levels
-                $quantized = round(round($gray / $step) * $step);
-                // Clamp to valid range
-                $quantized = max(0, min(255, $quantized));
-                
-                $newColor = imagecolorallocate($dstImage, $quantized, $quantized, $quantized);
-                imagesetpixel($dstImage, $x, $y, $newColor);
+        if ($levels < 16) {
+            // Use Floyd-Steinberg dithering for very low color levels
+            floydSteinbergDither($dstImage, $levels);
+        } else {
+            // Simple quantization for higher levels
+            $step = 255 / ($levels - 1);
+            for ($y = 0; $y < $targetHeight; $y++) {
+                for ($x = 0; $x < $targetWidth; $x++) {
+                    $rgb = imagecolorat($dstImage, $x, $y);
+                    $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
+                    
+                    // Quantize to specified number of levels
+                    $quantized = round(round($gray / $step) * $step);
+                    // Clamp to valid range
+                    $quantized = max(0, min(255, $quantized));
+                    
+                    $newColor = imagecolorallocate($dstImage, $quantized, $quantized, $quantized);
+                    imagesetpixel($dstImage, $x, $y, $newColor);
+                }
             }
         }
     }
@@ -255,6 +261,64 @@ function processImage($imageData, $levels) {
     imagedestroy($srcImage);
     
     return $dstImage;
+}
+
+function floydSteinbergDither($image, $levels) {
+    $width = imagesx($image);
+    $height = imagesy($image);
+    
+    // Calculate quantization step
+    $step = 255 / ($levels - 1);
+    
+    // Create error diffusion buffer
+    $errors = array_fill(0, $width, 0);
+    
+    for ($y = 0; $y < $height; $y++) {
+        $nextErrors = array_fill(0, $width, 0);
+        
+        for ($x = 0; $x < $width; $x++) {
+            // Get original pixel value
+            $rgb = imagecolorat($image, $x, $y);
+            $gray = ($rgb >> 16) & 0xFF;
+            
+            // Add error from previous row
+            $gray = $gray + $errors[$x];
+            
+            // Quantize to specified number of levels
+            $quantized = round(round($gray / $step) * $step);
+            // Clamp to valid range
+            $quantized = max(0, min(255, $quantized));
+            
+            // Calculate quantization error
+            $error = $gray - $quantized;
+            
+            // Distribute error using Floyd-Steinberg coefficients
+            // Current pixel: 0 (already processed)
+            // Right pixel: 7/16
+            // Below left: 3/16, Below: 5/16, Below right: 1/16
+            
+            if ($x + 1 < $width) {
+                $nextErrors[$x + 1] += $error * (7/16);
+            }
+            
+            if ($y + 1 < $height) {
+                if ($x > 0) {
+                    $nextErrors[$x - 1] += $error * (3/16);
+                }
+                $nextErrors[$x] += $error * (5/16);
+                if ($x + 1 < $width) {
+                    $nextErrors[$x + 1] += $error * (1/16);
+                }
+            }
+            
+            // Set the quantized pixel
+            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
+            imagesetpixel($image, $x, $y, $newColor);
+        }
+        
+        // Move to next row
+        $errors = $nextErrors;
+    }
 }
 
 try {
