@@ -78,43 +78,42 @@ function fetchRandomApodImage() {
 }
 
 function fetchRandomWikiImage() {
-    // For demonstration, we'll use a placeholder
-    // In a real implementation, this would connect to Wiki's API
-    // or scrape their website to get random artwork images
-    
-    // This is a placeholder implementation that returns a sample image
-    // A real implementation would fetch from https://www.wikiart.org/
-    throw new Exception('Wiki collection not yet implemented');
-    
-    // Example of what a real implementation might look like:
-    /*
-    $apiUrl = 'https://www.wikiart.org/en/api/2/Paintings';
+    // Fetch a random artwork from WikiArt
+    // Using the WikiArt API's "random artwork" endpoint
+    $apiUrl = 'https://www.wikiart.org/en/api/2/UpdatedItems?date=&offset=0&limit=100';
     $apiContent = file_get_contents($apiUrl);
     
     if ($apiContent === false) {
-        throw new Exception('Failed to fetch Wiki API');
+        throw new Exception('Failed to fetch WikiArt API');
     }
     
     $data = json_decode($apiContent, true);
     
     if (!$data || !isset($data['data'])) {
-        throw new Exception('Failed to parse Wiki API response');
+        throw new Exception('Failed to parse WikiArt API response');
     }
     
-    // Select a random painting
-    $paintings = $data['data'];
-    $randomPainting = $paintings[array_rand($paintings)];
+    // Filter for items with images
+    $artworks = array_filter($data['data'], function($item) {
+        return isset($item['image']) && !empty($item['image']);
+    });
+    
+    if (empty($artworks)) {
+        throw new Exception('No artworks with images found');
+    }
+    
+    // Select a random artwork
+    $randomArtwork = $artworks[array_rand($artworks)];
     
     // Fetch the image
-    $imageUrl = $randomPainting['image'];
+    $imageUrl = $randomArtwork['image'];
     $imageData = file_get_contents($imageUrl);
     
     if ($imageData === false) {
-        throw new Exception('Failed to fetch image from Wiki');
+        throw new Exception('Failed to fetch image from WikiArt');
     }
     
     return $imageData;
-    */
 }
 
 function fetchRandomTicImage() {
