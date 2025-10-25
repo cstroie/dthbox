@@ -4,7 +4,7 @@
 
 // Get collection from query parameter, default to apod
 $col = isset($_GET['col']) ? strtolower($_GET['col']) : 'apod';
-$allowedCollections = ['apod', 'wiki', 'tic'];
+$allowedCollections = ['apod', 'tic'];
 if (!in_array($col, $allowedCollections)) {
     $col = 'apod'; // Default to apod if invalid collection
 }
@@ -77,45 +77,6 @@ function fetchRandomApodImage() {
     return $imageData;
 }
 
-function fetchRandomWikiImage() {
-    // Fetch a random artwork from WikiArt
-    // Using the WikiArt API's "random artwork" endpoint
-    $apiUrl = 'https://www.wikiart.org/en/api/2/UpdatedItems?date=&offset=0&limit=100';
-    $apiContent = file_get_contents($apiUrl);
-    
-    if ($apiContent === false) {
-        throw new Exception('Failed to fetch WikiArt API');
-    }
-    
-    $data = json_decode($apiContent, true);
-    
-    if (!$data || !isset($data['data'])) {
-        throw new Exception('Failed to parse WikiArt API response');
-    }
-    
-    // Filter for items with images
-    $artworks = array_filter($data['data'], function($item) {
-        return isset($item['image']) && !empty($item['image']);
-    });
-    
-    if (empty($artworks)) {
-        throw new Exception('No artworks with images found');
-    }
-    
-    // Select a random artwork
-    $randomArtwork = $artworks[array_rand($artworks)];
-    
-    // Fetch the image
-    $imageUrl = $randomArtwork['image'];
-    $imageData = file_get_contents($imageUrl);
-    
-    if ($imageData === false) {
-        throw new Exception('Failed to fetch image from WikiArt');
-    }
-    
-    return $imageData;
-}
-
 function fetchRandomTicImage() {
     // Fetch the RSS feed
     $rssUrl = 'https://www.thisiscolossal.com/feed/';
@@ -174,8 +135,6 @@ function fetchRandomTicImage() {
 
 function fetchRandomImage($collection) {
     switch ($collection) {
-        case 'wiki':
-            return fetchRandomWikiImage();
         case 'tic':
             return fetchRandomTicImage();
         case 'apod':
