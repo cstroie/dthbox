@@ -4,7 +4,7 @@
 
 // Get collection from query parameter, default to apod
 $col = isset($_GET['col']) ? strtolower($_GET['col']) : 'apod';
-$allowedCollections = ['apod', 'wikiart', 'colossal'];
+$allowedCollections = ['apod', 'wiki', 'colossal'];
 if (!in_array($col, $allowedCollections)) {
     $col = 'apod'; // Default to apod if invalid collection
 }
@@ -77,14 +77,14 @@ function fetchRandomApodImage() {
     return $imageData;
 }
 
-function fetchRandomWikiartImage() {
+function fetchRandomWikiImage() {
     // For demonstration, we'll use a placeholder
-    // In a real implementation, this would connect to WikiArt's API
+    // In a real implementation, this would connect to Wiki's API
     // or scrape their website to get random artwork images
     
     // This is a placeholder implementation that returns a sample image
     // A real implementation would fetch from https://www.wikiart.org/
-    throw new Exception('WikiArt collection not yet implemented');
+    throw new Exception('Wiki collection not yet implemented');
     
     // Example of what a real implementation might look like:
     /*
@@ -92,13 +92,13 @@ function fetchRandomWikiartImage() {
     $apiContent = file_get_contents($apiUrl);
     
     if ($apiContent === false) {
-        throw new Exception('Failed to fetch WikiArt API');
+        throw new Exception('Failed to fetch Wiki API');
     }
     
     $data = json_decode($apiContent, true);
     
     if (!$data || !isset($data['data'])) {
-        throw new Exception('Failed to parse WikiArt API response');
+        throw new Exception('Failed to parse Wiki API response');
     }
     
     // Select a random painting
@@ -110,7 +110,7 @@ function fetchRandomWikiartImage() {
     $imageData = file_get_contents($imageUrl);
     
     if ($imageData === false) {
-        throw new Exception('Failed to fetch image from WikiArt');
+        throw new Exception('Failed to fetch image from Wiki');
     }
     
     return $imageData;
@@ -175,8 +175,8 @@ function fetchRandomColossalImage() {
 
 function fetchRandomImage($collection) {
     switch ($collection) {
-        case 'wikiart':
-            return fetchRandomWikiartImage();
+        case 'wiki':
+            return fetchRandomWikiImage();
         case 'colossal':
             return fetchRandomColossalImage();
         case 'apod':
