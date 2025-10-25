@@ -73,6 +73,156 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetWidth = 296;
         $targetHeight = 128;
     }
+    
+    // If no 'col' or 'url' are provided, show the upload form
+    if (!isset($_GET['col']) && !isset($_GET['url'])) {
+        showUploadForm();
+        exit;
+    }
+}
+
+function showUploadForm() {
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Image Processor</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f5f5f5;
+            }
+            .container {
+                background-color: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            h1 {
+                color: #333;
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            .form-group {
+                margin-bottom: 20px;
+            }
+            label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+                color: #555;
+            }
+            input[type="text"], input[type="file"], select {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                font-size: 16px;
+                box-sizing: border-box;
+            }
+            input[type="submit"] {
+                background-color: #4CAF50;
+                color: white;
+                padding: 12px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+                width: 100%;
+                margin-top: 10px;
+            }
+            input[type="submit"]:hover {
+                background-color: #45a049;
+            }
+            .section {
+                margin-bottom: 30px;
+                padding: 20px;
+                border: 1px solid #eee;
+                border-radius: 5px;
+            }
+            .section h2 {
+                margin-top: 0;
+                color: #333;
+            }
+            .note {
+                font-size: 14px;
+                color: #666;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Image Processor</h1>
+            
+            <div class="section">
+                <h2>Upload Image via URL</h2>
+                <form method="GET" action="">
+                    <div class="form-group">
+                        <label for="url">Image URL:</label>
+                        <input type="text" id="url" name="url" placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label for="fmt_url">Output Format:</label>
+                        <select id="fmt_url" name="fmt">
+                            <option value="png">PNG</option>
+                            <option value="jpg">JPG</option>
+                            <option value="ppm">PPM</option>
+                            <option value="pbm">PBM</option>
+                            <option value="gif">GIF</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="lvl_url">Grayscale Levels (2-256):</label>
+                        <input type="number" id="lvl_url" name="lvl" min="2" max="256" value="256">
+                    </div>
+                    <div class="form-group">
+                        <label for="res_url">Resolution (WxH):</label>
+                        <input type="text" id="res_url" name="res" value="296x128" placeholder="296x128">
+                    </div>
+                    <input type="submit" value="Process Image from URL">
+                </form>
+            </div>
+            
+            <div class="section">
+                <h2>Upload Image File</h2>
+                <form method="POST" action="" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="image">Select Image File:</label>
+                        <input type="file" id="image" name="image" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label for="fmt_file">Output Format:</label>
+                        <select id="fmt_file" name="fmt">
+                            <option value="png">PNG</option>
+                            <option value="jpg">JPG</option>
+                            <option value="ppm">PPM</option>
+                            <option value="pbm">PBM</option>
+                            <option value="gif">GIF</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="lvl_file">Grayscale Levels (2-256):</label>
+                        <input type="number" id="lvl_file" name="lvl" min="2" max="256" value="256">
+                    </div>
+                    <div class="form-group">
+                        <label for="res_file">Resolution (WxH):</label>
+                        <input type="text" id="res_file" name="res" value="296x128" placeholder="296x128">
+                    </div>
+                    <input type="submit" value="Process Uploaded Image">
+                </form>
+            </div>
+            
+            <p class="note">Note: If no parameters are provided, a random image from our collection will be processed.</p>
+        </div>
+    </body>
+    </html>
+    <?php
 }
 
 function fetchRandomApodImage() {
