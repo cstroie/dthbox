@@ -4,7 +4,7 @@
 
 // Get collection from query parameter, default to apod
 $col = isset($_GET['col']) ? strtolower($_GET['col']) : 'apod';
-$allowedCollections = ['apod', 'wiki', 'colossal'];
+$allowedCollections = ['apod', 'wiki', 'tic'];
 if (!in_array($col, $allowedCollections)) {
     $col = 'apod'; // Default to apod if invalid collection
 }
@@ -117,20 +117,20 @@ function fetchRandomWikiImage() {
     */
 }
 
-function fetchRandomColossalImage() {
+function fetchRandomTicImage() {
     // Fetch the RSS feed
     $rssUrl = 'https://www.thisiscolossal.com/feed/';
     $rssContent = file_get_contents($rssUrl);
     
     if ($rssContent === false) {
-        throw new Exception('Failed to fetch Colossal RSS feed');
+        throw new Exception('Failed to fetch TIC RSS feed');
     }
     
     // Parse the RSS feed
     $rss = simplexml_load_string($rssContent);
     
     if ($rss === false) {
-        throw new Exception('Failed to parse Colossal RSS feed');
+        throw new Exception('Failed to parse TIC RSS feed');
     }
     
     // Extract image URLs from enclosures
@@ -157,7 +157,7 @@ function fetchRandomColossalImage() {
     }
     
     if (empty($imageUrls)) {
-        throw new Exception('No JPG images found in Colossal RSS feed');
+        throw new Exception('No JPG images found in TIC RSS feed');
     }
     
     // Select a random image
@@ -167,7 +167,7 @@ function fetchRandomColossalImage() {
     $imageData = file_get_contents($randomImageUrl);
     
     if ($imageData === false) {
-        throw new Exception('Failed to fetch image from Colossal');
+        throw new Exception('Failed to fetch image from TIC');
     }
     
     return $imageData;
@@ -177,8 +177,8 @@ function fetchRandomImage($collection) {
     switch ($collection) {
         case 'wiki':
             return fetchRandomWikiImage();
-        case 'colossal':
-            return fetchRandomColossalImage();
+        case 'tic':
+            return fetchRandomTicImage();
         case 'apod':
         default:
             return fetchRandomApodImage();
