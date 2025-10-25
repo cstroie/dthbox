@@ -96,12 +96,6 @@ function showUploadForm() {
                 margin: 2rem auto;
                 padding: 0 1rem;
             }
-            .tab-content {
-                display: none;
-            }
-            .tab-content.active {
-                display: block;
-            }
             .note {
                 font-size: 0.9rem;
                 color: var(--pico-muted-color);
@@ -112,83 +106,119 @@ function showUploadForm() {
         <main class="container">
             <h1>Image Processor</h1>
             
-            <div role="tablist">
-                <input type="radio" id="tab-url" name="tabs" checked>
-                <label for="tab-url">Via URL</label>
-                
-                <input type="radio" id="tab-file" name="tabs">
-                <label for="tab-file">Upload File</label>
-                
-                <div class="tab-content active" id="url-content">
-                    <form method="GET" action="">
-                        <div>
-                            <label for="url">Image URL:</label>
-                            <input type="url" id="url" name="url" placeholder="https://example.com/image.jpg">
-                        </div>
-                        <div>
-                            <label for="fmt">Output Format:</label>
-                            <select id="fmt" name="fmt">
-                                <option value="png">PNG</option>
-                                <option value="jpg">JPG</option>
-                                <option value="ppm">PPM</option>
-                                <option value="pbm">PBM</option>
-                                <option value="gif">GIF</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="lvl">Grayscale Levels (2-256):</label>
-                            <input type="number" id="lvl" name="lvl" min="2" max="256" value="256">
-                        </div>
-                        <div>
-                            <label for="res">Resolution (WxH):</label>
-                            <input type="text" id="res" name="res" value="296x128" placeholder="296x128">
-                        </div>
-                        <input type="submit" value="Process Image from URL">
-                    </form>
-                </div>
-                
-                <div class="tab-content" id="file-content">
-                    <form method="POST" action="" enctype="multipart/form-data">
-                        <div>
-                            <label for="image">Select Image File:</label>
-                            <input type="file" id="image" name="image" accept="image/*">
-                        </div>
-                        <div>
-                            <label for="fmt_file">Output Format:</label>
-                            <select id="fmt_file" name="fmt">
-                                <option value="png">PNG</option>
-                                <option value="jpg">JPG</option>
-                                <option value="ppm">PPM</option>
-                                <option value="pbm">PBM</option>
-                                <option value="gif">GIF</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="lvl_file">Grayscale Levels (2-256):</label>
-                            <input type="number" id="lvl_file" name="lvl" min="2" max="256" value="256">
-                        </div>
-                        <div>
-                            <label for="res_file">Resolution (WxH):</label>
-                            <input type="text" id="res_file" name="res" value="296x128" placeholder="296x128">
-                        </div>
-                        <input type="submit" value="Process Uploaded Image">
-                    </form>
-                </div>
+            <div class="tab">
+                <button class="tablinks active" onclick="openTab(event, 'url')">Via URL</button>
+                <button class="tablinks" onclick="openTab(event, 'file')">Upload File</button>
+                <button class="tablinks" onclick="openTab(event, 'collection')">Random Collection</button>
             </div>
             
-            <p class="note">Note: If no parameters are provided, a random image from our collection will be processed.</p>
+            <div id="url" class="tabcontent" style="display:block">
+                <form method="GET" action="">
+                    <div>
+                        <label for="url_input">Image URL:</label>
+                        <input type="url" id="url_input" name="url" placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div>
+                        <label for="fmt_url">Output Format:</label>
+                        <select id="fmt_url" name="fmt">
+                            <option value="png">PNG</option>
+                            <option value="jpg">JPG</option>
+                            <option value="ppm">PPM</option>
+                            <option value="pbm">PBM</option>
+                            <option value="gif">GIF</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="lvl_url">Grayscale Levels (2-256):</label>
+                        <input type="number" id="lvl_url" name="lvl" min="2" max="256" value="256">
+                    </div>
+                    <div>
+                        <label for="res_url">Resolution (WxH):</label>
+                        <input type="text" id="res_url" name="res" value="296x128" placeholder="296x128">
+                    </div>
+                    <input type="submit" value="Process Image from URL">
+                </form>
+            </div>
+            
+            <div id="file" class="tabcontent" style="display:none">
+                <form method="POST" action="" enctype="multipart/form-data">
+                    <div>
+                        <label for="image">Select Image File:</label>
+                        <input type="file" id="image" name="image" accept="image/*">
+                    </div>
+                    <div>
+                        <label for="fmt_file">Output Format:</label>
+                        <select id="fmt_file" name="fmt">
+                            <option value="png">PNG</option>
+                            <option value="jpg">JPG</option>
+                            <option value="ppm">PPM</option>
+                            <option value="pbm">PBM</option>
+                            <option value="gif">GIF</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="lvl_file">Grayscale Levels (2-256):</label>
+                        <input type="number" id="lvl_file" name="lvl" min="2" max="256" value="256">
+                    </div>
+                    <div>
+                        <label for="res_file">Resolution (WxH):</label>
+                        <input type="text" id="res_file" name="res" value="296x128" placeholder="296x128">
+                    </div>
+                    <input type="submit" value="Process Uploaded Image">
+                </form>
+            </div>
+            
+            <div id="collection" class="tabcontent" style="display:none">
+                <form method="GET" action="">
+                    <div>
+                        <label for="col">Collection:</label>
+                        <select id="col" name="col">
+                            <option value="apod">Astronomy Picture of the Day</option>
+                            <option value="tic">This Is Colossal</option>
+                            <option value="jux">Juxtapoz</option>
+                            <option value="veri">Veri Artem</option>
+                            <option value="any">Random Collection</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="fmt_col">Output Format:</label>
+                        <select id="fmt_col" name="fmt">
+                            <option value="png">PNG</option>
+                            <option value="jpg">JPG</option>
+                            <option value="ppm">PPM</option>
+                            <option value="pbm">PBM</option>
+                            <option value="gif">GIF</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="lvl_col">Grayscale Levels (2-256):</label>
+                        <input type="number" id="lvl_col" name="lvl" min="2" max="256" value="256">
+                    </div>
+                    <div>
+                        <label for="res_col">Resolution (WxH):</label>
+                        <input type="text" id="res_col" name="res" value="296x128" placeholder="296x128">
+                    </div>
+                    <input type="submit" value="Process Random Image">
+                </form>
+            </div>
+            
+            <p class="note">Note: If no parameters are provided, this form will be displayed.</p>
         </main>
         
         <script>
-            document.getElementById('tab-url').addEventListener('change', function() {
-                document.getElementById('url-content').classList.add('active');
-                document.getElementById('file-content').classList.remove('active');
-            });
-            
-            document.getElementById('tab-file').addEventListener('change', function() {
-                document.getElementById('file-content').classList.add('active');
-                document.getElementById('url-content').classList.remove('active');
-            });
+            function openTab(evt, tabName) {
+                var i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+                tablinks = document.getElementsByClassName("tablinks");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].className = tablinks[i].className.replace(" active", "");
+                }
+                document.getElementById(tabName).style.display = "block";
+                evt.currentTarget.className += " active";
+            }
         </script>
     </body>
     </html>
