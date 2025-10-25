@@ -30,13 +30,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!in_array($fmt, $allowedFormats)) {
         $fmt = 'png'; // Default to png if invalid format
     }
+    
+    // Check for URL parameter in POST data
+    $imageUrl = isset($_POST['url']) ? $_POST['url'] : null;
 } else {
+    // Check for URL parameter in GET data
+    $imageUrl = isset($_GET['url']) ? $_GET['url'] : null;
+    
     // Get collection from query parameter, default to random selection
     $col = isset($_GET['col']) ? strtolower($_GET['col']) : 'any';
     $allowedCollections = ['apod', 'tic', 'jux', 'veri'];
 
     // If collection is 'any' or not specified, choose randomly from available collections
-    if ($col === 'any' || !in_array($col, $allowedCollections)) {
+    // But only if no URL is provided
+    if (!$imageUrl && ($col === 'any' || !in_array($col, $allowedCollections))) {
         $col = $allowedCollections[array_rand($allowedCollections)];
     }
 
@@ -441,25 +448,39 @@ function floydSteinbergDither($image, $levels) {
 }
 
 try {
-    // Check if this is a POST request with image data
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // Check if image file was uploaded
-        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-            // Get image data from uploaded file
-            $imageData = file_get_contents($_FILES['image']['tmp_name']);
-            if ($imageData === false) {
-                throw new Exception('Failed to read uploaded image');
-            }
-        } else {
-            // Try to get image data from POST body
-            $imageData = file_get_contents('php://input');
-            if (empty($imageData)) {
-                throw new Exception('No image data provided');
-            }
+    // Check if URL parameter is provided
+    if ($imageUrl) {
+        // Validate URL
+        if (!filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+            throw new Exception('Invalid URL provided');
+        }
+        
+        // Fetch image from URL
+        $imageData = file_get_contents($imageUrl);
+        if ($imageData === false) {
+            throw new Exception('Failed to fetch image from URL');
         }
     } else {
-        // Fetch random image from specified collection
-        $imageData = fetchRandomImage($col);
+        // Check if this is a POST request with image data
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Check if image file was uploaded
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                // Get image data from uploaded file
+                $imageData = file_get_contents($_FILES['image']['tmp_name']);
+                if ($imageData === false) {
+                    throw new Exception('Failed to read uploaded image');
+                }
+            } else {
+                // Try to get image data from POST body
+                $imageData = file_get_contents('php://input');
+                if (empty($imageData)) {
+                    throw new Exception('No image data provided');
+                }
+            }
+        } else {
+            // Fetch random image from specified collection
+            $imageData = fetchRandomImage($col);
+        }
     }
     
     // Process the image
