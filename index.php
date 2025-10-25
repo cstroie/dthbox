@@ -129,8 +129,8 @@ function showUploadForm() {
                         </select>
                     </div>
                     <div>
-                        <label for="lvl_url">Grayscale Levels (2-256):</label>
-                        <input type="number" id="lvl_url" name="lvl" min="2" max="256" value="256">
+                        <label for="lvl_url">Grayscale Levels: <span id="lvl_url_value">256</span></label>
+                        <input type="range" id="lvl_url" name="lvl" min="2" max="256" value="256" oninput="document.getElementById('lvl_url_value').textContent = this.value">
                     </div>
                     <div>
                         <label for="res_url">Resolution (WxH):</label>
@@ -157,8 +157,8 @@ function showUploadForm() {
                         </select>
                     </div>
                     <div>
-                        <label for="lvl_file">Grayscale Levels (2-256):</label>
-                        <input type="number" id="lvl_file" name="lvl" min="2" max="256" value="256">
+                        <label for="lvl_file">Grayscale Levels: <span id="lvl_file_value">256</span></label>
+                        <input type="range" id="lvl_file" name="lvl" min="2" max="256" value="256" oninput="document.getElementById('lvl_file_value').textContent = this.value">
                     </div>
                     <div>
                         <label for="res_file">Resolution (WxH):</label>
@@ -191,8 +191,8 @@ function showUploadForm() {
                         </select>
                     </div>
                     <div>
-                        <label for="lvl_col">Grayscale Levels (2-256):</label>
-                        <input type="number" id="lvl_col" name="lvl" min="2" max="256" value="256">
+                        <label for="lvl_col">Grayscale Levels: <span id="lvl_col_value">256</span></label>
+                        <input type="range" id="lvl_col" name="lvl" min="2" max="256" value="256" oninput="document.getElementById('lvl_col_value').textContent = this.value">
                     </div>
                     <div>
                         <label for="res_col">Resolution (WxH):</label>
