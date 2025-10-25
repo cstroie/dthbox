@@ -3,23 +3,23 @@
 // Then crop and scale it to 296x128 format and return in specified format
 
 // Get collection from query parameter, default to apod
-$collection = isset($_GET['collection']) ? strtolower($_GET['collection']) : 'apod';
+$col = isset($_GET['col']) ? strtolower($_GET['col']) : 'apod';
 $allowedCollections = ['apod', 'wikiart', 'colossal'];
-if (!in_array($collection, $allowedCollections)) {
-    $collection = 'apod'; // Default to apod if invalid collection
+if (!in_array($col, $allowedCollections)) {
+    $col = 'apod'; // Default to apod if invalid collection
 }
 
 // Get format from query parameter, default to png
-$format = isset($_GET['format']) ? strtolower($_GET['format']) : 'png';
+$fmt = isset($_GET['fmt']) ? strtolower($_GET['fmt']) : 'png';
 $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
-if (!in_array($format, $allowedFormats)) {
-    $format = 'png'; // Default to png if invalid format
+if (!in_array($fmt, $allowedFormats)) {
+    $fmt = 'png'; // Default to png if invalid format
 }
 
 // Get grayscale levels from query parameter, default to 256 (full grayscale)
-$levels = isset($_GET['levels']) ? intval($_GET['levels']) : 256;
+$lvl = isset($_GET['lvl']) ? intval($_GET['lvl']) : 256;
 // Clamp levels between 2 and 256
-$levels = max(2, min(256, $levels));
+$lvl = max(2, min(256, $lvl));
 
 function fetchRandomApodImage() {
     // Fetch the RSS feed
@@ -259,13 +259,13 @@ function processImage($imageData, $levels) {
 
 try {
     // Fetch random image from specified collection
-    $imageData = fetchRandomImage($collection);
+    $imageData = fetchRandomImage($col);
     
     // Process the image
-    $processedImage = processImage($imageData, $levels);
+    $processedImage = processImage($imageData, $lvl);
     
     // Output in specified format
-    switch ($format) {
+    switch ($fmt) {
         case 'jpg':
         case 'jpeg':
             header('Content-Type: image/jpeg');
