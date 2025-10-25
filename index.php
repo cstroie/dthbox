@@ -310,7 +310,7 @@ function processImage($imageData, $levels) {
     
     // Apply Floyd-Steinberg dithering for low levels, otherwise simple quantization
     if ($levels < 256) {
-        if ($levels < 16) {
+        if ($levels <= 16) {
             // Use Floyd-Steinberg dithering for very low color levels
             floydSteinbergDither($dstImage, $levels);
         } else {
