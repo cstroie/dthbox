@@ -1,6 +1,13 @@
 <?php
-// Fetch and process APOD RSS feed to get a random JPG image
+// Fetch and process art images from specified collection
 // Then crop and scale it to 296x128 format and return in specified format
+
+// Get collection from query parameter, default to apod
+$collection = isset($_GET['collection']) ? strtolower($_GET['collection']) : 'apod';
+$allowedCollections = ['apod', 'wikiart'];
+if (!in_array($collection, $allowedCollections)) {
+    $collection = 'apod'; // Default to apod if invalid collection
+}
 
 // Get format from query parameter, default to png
 $format = isset($_GET['format']) ? strtolower($_GET['format']) : 'png';
@@ -68,6 +75,56 @@ function fetchRandomApodImage() {
     }
     
     return $imageData;
+}
+
+function fetchRandomWikiartImage() {
+    // For demonstration, we'll use a placeholder
+    // In a real implementation, this would connect to WikiArt's API
+    // or scrape their website to get random artwork images
+    
+    // This is a placeholder implementation that returns a sample image
+    // A real implementation would fetch from https://www.wikiart.org/
+    throw new Exception('WikiArt collection not yet implemented');
+    
+    // Example of what a real implementation might look like:
+    /*
+    $apiUrl = 'https://www.wikiart.org/en/api/2/Paintings';
+    $apiContent = file_get_contents($apiUrl);
+    
+    if ($apiContent === false) {
+        throw new Exception('Failed to fetch WikiArt API');
+    }
+    
+    $data = json_decode($apiContent, true);
+    
+    if (!$data || !isset($data['data'])) {
+        throw new Exception('Failed to parse WikiArt API response');
+    }
+    
+    // Select a random painting
+    $paintings = $data['data'];
+    $randomPainting = $paintings[array_rand($paintings)];
+    
+    // Fetch the image
+    $imageUrl = $randomPainting['image'];
+    $imageData = file_get_contents($imageUrl);
+    
+    if ($imageData === false) {
+        throw new Exception('Failed to fetch image from WikiArt');
+    }
+    
+    return $imageData;
+    */
+}
+
+function fetchRandomImage($collection) {
+    switch ($collection) {
+        case 'wikiart':
+            return fetchRandomWikiartImage();
+        case 'apod':
+        default:
+            return fetchRandomApodImage();
+    }
 }
 
 function processImage($imageData, $levels) {
@@ -143,8 +200,8 @@ function processImage($imageData, $levels) {
 }
 
 try {
-    // Fetch random APOD image
-    $imageData = fetchRandomApodImage();
+    // Fetch random image from specified collection
+    $imageData = fetchRandomImage($collection);
     
     // Process the image
     $processedImage = processImage($imageData, $levels);
