@@ -368,22 +368,23 @@ function floydSteinbergDither($image, $levels) {
             // Calculate quantization error
             $error = $gray - $quantized;
             
-            // Distribute error using Floyd-Steinberg coefficients
+            // Distribute error using reduced Floyd-Steinberg coefficients
+            // Reduce bleeding by using smaller fractions (half the original values)
             // Current pixel: 0 (already processed)
-            // Right pixel: 7/16
-            // Below left: 3/16, Below: 5/16, Below right: 1/16
+            // Right pixel: 7/32 (instead of 7/16)
+            // Below left: 3/32 (instead of 3/16), Below: 5/32 (instead of 5/16), Below right: 1/32 (instead of 1/16)
             
             if ($x + 1 < $width) {
-                $nextErrors[$x + 1] += $error * (7/16);
+                $nextErrors[$x + 1] += $error * (7/32);
             }
             
             if ($y + 1 < $height) {
                 if ($x > 0) {
-                    $nextErrors[$x - 1] += $error * (3/16);
+                    $nextErrors[$x - 1] += $error * (3/32);
                 }
-                $nextErrors[$x] += $error * (5/16);
+                $nextErrors[$x] += $error * (5/32);
                 if ($x + 1 < $width) {
-                    $nextErrors[$x + 1] += $error * (1/16);
+                    $nextErrors[$x + 1] += $error * (1/32);
                 }
             }
             
