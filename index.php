@@ -8,9 +8,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
     $lvl = isset($_POST['lvl']) ? intval($_POST['lvl']) : 2;
     $res = isset($_POST['res']) ? $_POST['res'] : '296x128';
-    $dither = isset($_POST['dither']) ? (bool)$_POST['dither'] : true;
+    $ditherMethod = isset($_POST['ditherMethod']) ? $_POST['ditherMethod'] : 'floyd-steinberg';
     $reduceBleeding = isset($_POST['reduceBleeding']) ? (bool)$_POST['reduceBleeding'] : true;
-    
+        
     // Validate and parse resolution
     if (preg_match('/^(\d+)x(\d+)$/', $res, $matches)) {
         $targetWidth = intval($matches[1]);
@@ -23,22 +23,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetWidth = 296;
         $targetHeight = 128;
     }
-    
+        
     // Clamp levels between 2 and 256
     $lvl = max(2, min(256, $lvl));
-    
+        
     // Get allowed formats
     $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
     if (!in_array($fmt, $allowedFormats)) {
         $fmt = 'png'; // Default to png if invalid format
     }
-    
+        
     // Check for URL parameter in POST data
     $imageUrl = isset($_POST['url']) ? $_POST['url'] : null;
 } else {
     // Check for URL parameter in GET data
     $imageUrl = isset($_GET['url']) ? $_GET['url'] : null;
-    
+        
     // Get collection from query parameter, default to random selection
     $col = isset($_GET['col']) ? strtolower($_GET['col']) : 'any';
     $allowedCollections = ['apod', 'tic', 'jux', 'veri'];
@@ -75,11 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetWidth = 296;
         $targetHeight = 128;
     }
-    
-    // Get dithering and bleeding parameters
-    $dither = isset($_GET['dither']) ? (bool)$_GET['dither'] : true;
+        
+    // Get dithering parameters
+    $ditherMethod = isset($_GET['ditherMethod']) ? $_GET['ditherMethod'] : 'floyd-steinberg';
     $reduceBleeding = isset($_GET['reduceBleeding']) ? (bool)$_GET['reduceBleeding'] : true;
-    
+        
     // If no 'col' or 'url' are provided, show the upload form
     if (!isset($_GET['col']) && !isset($_GET['url'])) {
         showUploadForm();
@@ -139,10 +139,15 @@ function showUploadForm() {
                         <input type="range" id="lvl_url" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_url_value').textContent = this.value">
                     </div>
                     <div>
-                        <label>
-                            <input type="checkbox" id="dither_url" name="dither" value="1" checked>
-                            Enable Dithering
-                        </label>
+                        <label for="ditherMethod_url">Dithering Method:</label>
+                        <select id="ditherMethod_url" name="ditherMethod">
+                            <option value="none">None</option>
+                            <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
+                            <option value="atkinson">Atkinson</option>
+                            <option value="jarvis">Jarvis, Judice & Ninke</option>
+                            <option value="stucki">Stucki</option>
+                            <option value="burkes">Burkes</option>
+                        </select>
                     </div>
                     <div>
                         <label>
@@ -179,10 +184,15 @@ function showUploadForm() {
                         <input type="range" id="lvl_file" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_file_value').textContent = this.value">
                     </div>
                     <div>
-                        <label>
-                            <input type="checkbox" id="dither_file" name="dither" value="1" checked>
-                            Enable Dithering
-                        </label>
+                        <label for="ditherMethod_file">Dithering Method:</label>
+                        <select id="ditherMethod_file" name="ditherMethod">
+                            <option value="none">None</option>
+                            <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
+                            <option value="atkinson">Atkinson</option>
+                            <option value="jarvis">Jarvis, Judice & Ninke</option>
+                            <option value="stucki">Stucki</option>
+                            <option value="burkes">Burkes</option>
+                        </select>
                     </div>
                     <div>
                         <label>
@@ -225,10 +235,15 @@ function showUploadForm() {
                         <input type="range" id="lvl_col" name="lvl" min="2" max="256" value="2" oninput="document.getElementById('lvl_col_value').textContent = this.value">
                     </div>
                     <div>
-                        <label>
-                            <input type="checkbox" id="dither_col" name="dither" value="1" checked>
-                            Enable Dithering
-                        </label>
+                        <label for="ditherMethod_col">Dithering Method:</label>
+                        <select id="ditherMethod_col" name="ditherMethod">
+                            <option value="none">None</option>
+                            <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
+                            <option value="atkinson">Atkinson</option>
+                            <option value="jarvis">Jarvis, Judice & Ninke</option>
+                            <option value="stucki">Stucki</option>
+                            <option value="burkes">Burkes</option>
+                        </select>
                     </div>
                     <div>
                         <label>
@@ -549,27 +564,58 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight) {
     // Convert to grayscale
     imagefilter($dstImage, IMG_FILTER_GRAYSCALE);
     
-    // Apply Floyd-Steinberg dithering for low levels, otherwise simple quantization
-    if ($levels < 256) {
-        if ($levels <= 16 && $dither) {
-            // Use Floyd-Steinberg dithering for very low color levels
-            floydSteinbergDither($dstImage, $levels, $reduceBleeding);
-        } else {
-            // Simple quantization for higher levels or when dithering is disabled
-            $step = 255 / ($levels - 1);
-            for ($y = 0; $y < $targetHeight; $y++) {
-                for ($x = 0; $x < $targetWidth; $x++) {
-                    $rgb = imagecolorat($dstImage, $x, $y);
-                    $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
-                    
-                    // Quantize to specified number of levels
-                    $quantized = round(round($gray / $step) * $step);
-                    // Clamp to valid range
-                    $quantized = max(0, min(255, $quantized));
-                    
-                    $newColor = imagecolorallocate($dstImage, $quantized, $quantized, $quantized);
-                    imagesetpixel($dstImage, $x, $y, $newColor);
+    // Apply dithering based on selected method for low levels, otherwise simple quantization
+    if ($levels < 256 && $ditherMethod !== 'none') {
+        switch ($ditherMethod) {
+            case 'floyd-steinberg':
+                floydSteinbergDither($dstImage, $levels, $reduceBleeding);
+                break;
+            case 'atkinson':
+                atkinsonDither($dstImage, $levels, $reduceBleeding);
+                break;
+            case 'jarvis':
+                jarvisDither($dstImage, $levels, $reduceBleeding);
+                break;
+            case 'stucki':
+                stuckiDither($dstImage, $levels, $reduceBleeding);
+                break;
+            case 'burkes':
+                burkesDither($dstImage, $levels, $reduceBleeding);
+                break;
+            default:
+                // Simple quantization for unknown methods
+                $step = 255 / ($levels - 1);
+                for ($y = 0; $y < $targetHeight; $y++) {
+                    for ($x = 0; $x < $targetWidth; $x++) {
+                        $rgb = imagecolorat($dstImage, $x, $y);
+                        $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
+                        
+                        // Quantize to specified number of levels
+                        $quantized = round(round($gray / $step) * $step);
+                        // Clamp to valid range
+                        $quantized = max(0, min(255, $quantized));
+                        
+                        $newColor = imagecolorallocate($dstImage, $quantized, $quantized, $quantized);
+                        imagesetpixel($dstImage, $x, $y, $newColor);
+                    }
                 }
+                break;
+        }
+    } else if ($levels < 256) {
+        // Simple quantization when dithering is disabled
+        $step = 255 / ($levels - 1);
+        for ($y = 0; $y < $targetHeight; $y++) {
+            for ($x = 0; $x < $targetWidth; $x++) {
+                $rgb = imagecolorat($dstImage, $x, $y);
+                $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
+                
+                // Quantize to specified number of levels
+                $quantized = round(round($gray / $step) * $step);
+                // Clamp to valid range
+                $quantized = max(0, min(255, $quantized));
+                
+                $newColor = imagecolorallocate($dstImage, $quantized, $quantized, $quantized);
+                imagesetpixel($dstImage, $x, $y, $newColor);
             }
         }
     }
@@ -647,6 +693,363 @@ function floydSteinbergDither($image, $levels, $reduceBleeding = true) {
                     if ($x + 1 < $width) {
                         $nextErrors[$x + 1] += $error * (1/16);
                     }
+                }
+            }
+            
+            // Set the quantized pixel
+            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
+            imagesetpixel($image, $x, $y, $newColor);
+        }
+        
+        // Move to next row
+        $errors = $nextErrors;
+    }
+}
+
+function atkinsonDither($image, $levels, $reduceBleeding = true) {
+    $width = imagesx($image);
+    $height = imagesy($image);
+    
+    // Calculate quantization step
+    $step = 255 / ($levels - 1);
+    
+    // Create error diffusion buffer
+    $errors = array_fill(0, $width, 0);
+    
+    for ($y = 0; $y < $height; $y++) {
+        $nextErrors = array_fill(0, $width, 0);
+        
+        for ($x = 0; $x < $width; $x++) {
+            // Get original pixel value
+            $rgb = imagecolorat($image, $x, $y);
+            $gray = ($rgb >> 16) & 0xFF;
+            
+            // Add error from previous row
+            $gray = $gray + $errors[$x];
+            
+            // Quantize to specified number of levels
+            $quantized = round(round($gray / $step) * $step);
+            // Clamp to valid range
+            $quantized = max(0, min(255, $quantized));
+            
+            // Calculate quantization error
+            $error = $gray - $quantized;
+            
+            // Distribute error using Atkinson coefficients (1/8 for each neighbor)
+            // Reduce bleeding if requested by using 1/16 instead of 1/8
+            $errorFraction = $reduceBleeding ? (1/16) : (1/8);
+            
+            if ($x + 1 < $width) {
+                $nextErrors[$x + 1] += $error * $errorFraction;
+            }
+            if ($x + 2 < $width) {
+                $nextErrors[$x + 2] += $error * $errorFraction;
+            }
+            if ($y + 1 < $height) {
+                if ($x > 0) {
+                    $nextErrors[$x - 1] += $error * $errorFraction;
+                }
+                $nextErrors[$x] += $error * $errorFraction;
+                if ($x + 1 < $width) {
+                    $nextErrors[$x + 1] += $error * $errorFraction;
+                }
+            }
+            if ($y + 2 < $height) {
+                $nextErrors[$x] += $error * $errorFraction;
+            }
+            
+            // Set the quantized pixel
+            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
+            imagesetpixel($image, $x, $y, $newColor);
+        }
+        
+        // Move to next row
+        $errors = $nextErrors;
+    }
+}
+
+function jarvisDither($image, $levels, $reduceBleeding = true) {
+    $width = imagesx($image);
+    $height = imagesy($image);
+    
+    // Calculate quantization step
+    $step = 255 / ($levels - 1);
+    
+    // Create error diffusion buffer
+    $errors = array_fill(0, $width, 0);
+    
+    for ($y = 0; $y < $height; $y++) {
+        $nextErrors = array_fill(0, $width, 0);
+        
+        for ($x = 0; $x < $width; $x++) {
+            // Get original pixel value
+            $rgb = imagecolorat($image, $x, $y);
+            $gray = ($rgb >> 16) & 0xFF;
+            
+            // Add error from previous row
+            $gray = $gray + $errors[$x];
+            
+            // Quantize to specified number of levels
+            $quantized = round(round($gray / $step) * $step);
+            // Clamp to valid range
+            $quantized = max(0, min(255, $quantized));
+            
+            // Calculate quantization error
+            $error = $gray - $quantized;
+            
+            if ($reduceBleeding) {
+                // Distribute error using reduced Jarvis coefficients (half the original values)
+                // Row below: 7/48, 5/48, 3/48, 5/48, 7/48
+                // Two rows below: 3/48, 5/48, 7/48, 5/48, 3/48
+                if ($x - 2 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 2] += $error * (7/96);
+                }
+                if ($x - 1 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 1] += $error * (5/96);
+                }
+                if ($y + 1 < $height) {
+                    $nextErrors[$x] += $error * (3/96);
+                }
+                if ($x + 1 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 1] += $error * (5/96);
+                }
+                if ($x + 2 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 2] += $error * (7/96);
+                }
+                if ($x - 2 >= 0 && $y + 2 < $height) {
+                    $nextErrors[$x - 2] += $error * (3/96);
+                }
+                if ($x - 1 >= 0 && $y + 2 < $height) {
+                    $nextErrors[$x - 1] += $error * (5/96);
+                }
+                if ($y + 2 < $height) {
+                    $nextErrors[$x] += $error * (7/96);
+                }
+                if ($x + 1 < $width && $y + 2 < $height) {
+                    $nextErrors[$x + 1] += $error * (5/96);
+                }
+                if ($x + 2 < $width && $y + 2 < $height) {
+                    $nextErrors[$x + 2] += $error * (3/96);
+                }
+            } else {
+                // Distribute error using standard Jarvis coefficients
+                // Row below: 7/48, 5/48, 3/48, 5/48, 7/48
+                // Two rows below: 3/48, 5/48, 7/48, 5/48, 3/48
+                if ($x - 2 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 2] += $error * (7/48);
+                }
+                if ($x - 1 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 1] += $error * (5/48);
+                }
+                if ($y + 1 < $height) {
+                    $nextErrors[$x] += $error * (3/48);
+                }
+                if ($x + 1 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 1] += $error * (5/48);
+                }
+                if ($x + 2 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 2] += $error * (7/48);
+                }
+                if ($x - 2 >= 0 && $y + 2 < $height) {
+                    $nextErrors[$x - 2] += $error * (3/48);
+                }
+                if ($x - 1 >= 0 && $y + 2 < $height) {
+                    $nextErrors[$x - 1] += $error * (5/48);
+                }
+                if ($y + 2 < $height) {
+                    $nextErrors[$x] += $error * (7/48);
+                }
+                if ($x + 1 < $width && $y + 2 < $height) {
+                    $nextErrors[$x + 1] += $error * (5/48);
+                }
+                if ($x + 2 < $width && $y + 2 < $height) {
+                    $nextErrors[$x + 2] += $error * (3/48);
+                }
+            }
+            
+            // Set the quantized pixel
+            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
+            imagesetpixel($image, $x, $y, $newColor);
+        }
+        
+        // Move to next row
+        $errors = $nextErrors;
+    }
+}
+
+function stuckiDither($image, $levels, $reduceBleeding = true) {
+    $width = imagesx($image);
+    $height = imagesy($image);
+    
+    // Calculate quantization step
+    $step = 255 / ($levels - 1);
+    
+    // Create error diffusion buffer
+    $errors = array_fill(0, $width, 0);
+    
+    for ($y = 0; $y < $height; $y++) {
+        $nextErrors = array_fill(0, $width, 0);
+        
+        for ($x = 0; $x < $width; $x++) {
+            // Get original pixel value
+            $rgb = imagecolorat($image, $x, $y);
+            $gray = ($rgb >> 16) & 0xFF;
+            
+            // Add error from previous row
+            $gray = $gray + $errors[$x];
+            
+            // Quantize to specified number of levels
+            $quantized = round(round($gray / $step) * $step);
+            // Clamp to valid range
+            $quantized = max(0, min(255, $quantized));
+            
+            // Calculate quantization error
+            $error = $gray - $quantized;
+            
+            if ($reduceBleeding) {
+                // Distribute error using reduced Stucki coefficients (half the original values)
+                // Row below: 8/42, 4/42, 2/42, 4/42, 8/42
+                // Two rows below: 2/42, 4/42, 8/42, 4/42, 2/42
+                if ($x - 2 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 2] += $error * (8/84);
+                }
+                if ($x - 1 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 1] += $error * (4/84);
+                }
+                if ($y + 1 < $height) {
+                    $nextErrors[$x] += $error * (2/84);
+                }
+                if ($x + 1 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 1] += $error * (4/84);
+                }
+                if ($x + 2 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 2] += $error * (8/84);
+                }
+                if ($x - 2 >= 0 && $y + 2 < $height) {
+                    $nextErrors[$x - 2] += $error * (2/84);
+                }
+                if ($x - 1 >= 0 && $y + 2 < $height) {
+                    $nextErrors[$x - 1] += $error * (4/84);
+                }
+                if ($y + 2 < $height) {
+                    $nextErrors[$x] += $error * (8/84);
+                }
+                if ($x + 1 < $width && $y + 2 < $height) {
+                    $nextErrors[$x + 1] += $error * (4/84);
+                }
+                if ($x + 2 < $width && $y + 2 < $height) {
+                    $nextErrors[$x + 2] += $error * (2/84);
+                }
+            } else {
+                // Distribute error using standard Stucki coefficients
+                // Row below: 8/42, 4/42, 2/42, 4/42, 8/42
+                // Two rows below: 2/42, 4/42, 8/42, 4/42, 2/42
+                if ($x - 2 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 2] += $error * (8/42);
+                }
+                if ($x - 1 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 1] += $error * (4/42);
+                }
+                if ($y + 1 < $height) {
+                    $nextErrors[$x] += $error * (2/42);
+                }
+                if ($x + 1 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 1] += $error * (4/42);
+                }
+                if ($x + 2 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 2] += $error * (8/42);
+                }
+                if ($x - 2 >= 0 && $y + 2 < $height) {
+                    $nextErrors[$x - 2] += $error * (2/42);
+                }
+                if ($x - 1 >= 0 && $y + 2 < $height) {
+                    $nextErrors[$x - 1] += $error * (4/42);
+                }
+                if ($y + 2 < $height) {
+                    $nextErrors[$x] += $error * (8/42);
+                }
+                if ($x + 1 < $width && $y + 2 < $height) {
+                    $nextErrors[$x + 1] += $error * (4/42);
+                }
+                if ($x + 2 < $width && $y + 2 < $height) {
+                    $nextErrors[$x + 2] += $error * (2/42);
+                }
+            }
+            
+            // Set the quantized pixel
+            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
+            imagesetpixel($image, $x, $y, $newColor);
+        }
+        
+        // Move to next row
+        $errors = $nextErrors;
+    }
+}
+
+function burkesDither($image, $levels, $reduceBleeding = true) {
+    $width = imagesx($image);
+    $height = imagesy($image);
+    
+    // Calculate quantization step
+    $step = 255 / ($levels - 1);
+    
+    // Create error diffusion buffer
+    $errors = array_fill(0, $width, 0);
+    
+    for ($y = 0; $y < $height; $y++) {
+        $nextErrors = array_fill(0, $width, 0);
+        
+        for ($x = 0; $x < $width; $x++) {
+            // Get original pixel value
+            $rgb = imagecolorat($image, $x, $y);
+            $gray = ($rgb >> 16) & 0xFF;
+            
+            // Add error from previous row
+            $gray = $gray + $errors[$x];
+            
+            // Quantize to specified number of levels
+            $quantized = round(round($gray / $step) * $step);
+            // Clamp to valid range
+            $quantized = max(0, min(255, $quantized));
+            
+            // Calculate quantization error
+            $error = $gray - $quantized;
+            
+            if ($reduceBleeding) {
+                // Distribute error using reduced Burkes coefficients (half the original values)
+                // Row below: 8/32, 4/32, 2/32, 4/32, 8/32
+                if ($x - 2 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 2] += $error * (8/64);
+                }
+                if ($x - 1 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 1] += $error * (4/64);
+                }
+                if ($y + 1 < $height) {
+                    $nextErrors[$x] += $error * (2/64);
+                }
+                if ($x + 1 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 1] += $error * (4/64);
+                }
+                if ($x + 2 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 2] += $error * (8/64);
+                }
+            } else {
+                // Distribute error using standard Burkes coefficients
+                // Row below: 8/32, 4/32, 2/32, 4/32, 8/32
+                if ($x - 2 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 2] += $error * (8/32);
+                }
+                if ($x - 1 >= 0 && $y + 1 < $height) {
+                    $nextErrors[$x - 1] += $error * (4/32);
+                }
+                if ($y + 1 < $height) {
+                    $nextErrors[$x] += $error * (2/32);
+                }
+                if ($x + 1 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 1] += $error * (4/32);
+                }
+                if ($x + 2 < $width && $y + 1 < $height) {
+                    $nextErrors[$x + 2] += $error * (8/32);
                 }
             }
             
