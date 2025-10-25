@@ -70,7 +70,7 @@ function fetchRandomApodImage() {
     return $imageData;
 }
 
-function processImage($imageData) {
+function processImage($imageData, $levels) {
     // Create image from data
     $srcImage = imagecreatefromstring($imageData);
     
@@ -147,7 +147,7 @@ try {
     $imageData = fetchRandomApodImage();
     
     // Process the image
-    $processedImage = processImage($imageData);
+    $processedImage = processImage($imageData, $levels);
     
     // Output in specified format
     switch ($format) {
