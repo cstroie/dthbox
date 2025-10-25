@@ -524,7 +524,7 @@ function fetchRandomImage($collection) {
     }
 }
 
-function processImage($imageData, $levels, $targetWidth, $targetHeight) {
+function processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherMethod, $reduceBleeding) {
     // Create image from data
     $srcImage = imagecreatefromstring($imageData);
     
@@ -1104,7 +1104,7 @@ try {
     }
     
     // Process the image
-    $processedImage = processImage($imageData, $levels, $targetWidth, $targetHeight);
+    $processedImage = processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherMethod, $reduceBleeding);
     
     // Output in specified format
     switch ($fmt) {
