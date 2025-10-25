@@ -23,6 +23,21 @@ $lvl = isset($_GET['lvl']) ? intval($_GET['lvl']) : 256;
 // Clamp levels between 2 and 256
 $lvl = max(2, min(256, $lvl));
 
+// Get resolution from query parameter, default to 296x128
+$res = isset($_GET['res']) ? $_GET['res'] : '296x128';
+// Validate and parse resolution
+if (preg_match('/^(\d+)x(\d+)$/', $res, $matches)) {
+    $targetWidth = intval($matches[1]);
+    $targetHeight = intval($matches[2]);
+    // Ensure reasonable limits to prevent abuse
+    $targetWidth = max(1, min(2000, $targetWidth));
+    $targetHeight = max(1, min(2000, $targetHeight));
+} else {
+    // Default to 296x128 if invalid format
+    $targetWidth = 296;
+    $targetHeight = 128;
+}
+
 function fetchRandomApodImage() {
     // Fetch the RSS feed
     $rssUrl = 'https://apod.com/feed.rss';
@@ -261,7 +276,7 @@ function fetchRandomImage($collection) {
     }
 }
 
-function processImage($imageData, $levels) {
+function processImage($imageData, $levels, $targetWidth, $targetHeight) {
     // Create image from data
     $srcImage = imagecreatefromstring($imageData);
     
@@ -274,9 +289,6 @@ function processImage($imageData, $levels) {
     $srcHeight = imagesy($srcImage);
     
     // Calculate crop dimensions to maintain aspect ratio
-    $targetWidth = 296;
-    $targetHeight = 128;
-    
     $srcRatio = $srcWidth / $srcHeight;
     $targetRatio = $targetWidth / $targetHeight;
     
@@ -403,7 +415,7 @@ try {
     $imageData = fetchRandomImage($col);
     
     // Process the image
-    $processedImage = processImage($imageData, $lvl);
+    $processedImage = processImage($imageData, $lvl, $targetWidth, $targetHeight);
     
     // Output in specified format
     switch ($fmt) {
@@ -419,9 +431,9 @@ try {
         case 'ppm':
             header('Content-Type: image/x-portable-pixmap');
             // PPM format: P6 width height max_color_value binary_data
-            echo "P6\n296 128\n255\n";
-            for ($y = 0; $y < 128; $y++) {
-                for ($x = 0; $x < 296; $x++) {
+            echo "P6\n{$targetWidth} {$targetHeight}\n255\n";
+            for ($y = 0; $y < $targetHeight; $y++) {
+                for ($x = 0; $x < $targetWidth; $x++) {
                     $rgb = imagecolorat($processedImage, $x, $y);
                     $r = ($rgb >> 16) & 0xFF;
                     $g = ($rgb >> 8) & 0xFF;
@@ -437,11 +449,11 @@ try {
             echo "P4\n";
             // Add comment with collection name
             echo "# " . strtoupper($col) . "\n";
-            echo "296 128\n";
-            for ($y = 0; $y < 128; $y++) {
+            echo "{$targetWidth} {$targetHeight}\n";
+            for ($y = 0; $y < $targetHeight; $y++) {
                 $byte = 0;
                 $bitCount = 0;
-                for ($x = 0; $x < 296; $x++) {
+                for ($x = 0; $x < $targetWidth; $x++) {
                     $rgb = imagecolorat($processedImage, $x, $y);
                     $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
                     // Threshold at 128 for binary conversion
