@@ -114,6 +114,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
     // Check for URL parameter in POST data
     $imageUrl = isset($_POST['url']) ? $_POST['url'] : null;
+    
+    // Get collection from POST data if available
+    $col = isset($_POST['col']) ? strtolower($_POST['col']) : 'any';
+    global $collections;
+
+    // If collection is 'any' or not specified, choose randomly from available collections
+    // But only if no URL is provided
+    if (!$imageUrl && ($col === 'any' || !isset($collections[$col]))) {
+        $colKeys = array_keys($collections);
+        $col = $colKeys[array_rand($colKeys)];
+    }
 } else {
     // Check for URL parameter in GET data
     $imageUrl = isset($_GET['url']) ? $_GET['url'] : null;
