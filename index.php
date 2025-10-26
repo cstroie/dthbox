@@ -47,12 +47,12 @@ $collections = [
         'url' => 'https://veriartem.com/feed/'
     ]
 ];
-global $allowedFormats;
-$allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
-global $defaultResolution;
-$defaultResolution = '400x300';
-global $ditheringMethods;
-$ditheringMethods = [
+global $formats;
+$formats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
+global $defRes;
+$defRes = '400x300';
+global $dthMethods;
+$dthMethods = [
     'none' => 'None',
     'fs' => 'Floyd-Steinberg',
     'ak' => 'Atkinson',
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get parameters from POST data or use defaults
     $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
     $bits = isset($_POST['bits']) ? intval($_POST['bits']) : 1;
-    $res = isset($_POST['res']) ? $_POST['res'] : '400x300';
+    $res = isset($_POST['res']) ? $_POST['res'] : $defRes;
     $dth = isset($_POST['dth']) ? $_POST['dth'] : 'fs';
     $rb = isset($_POST['rb']) ? (bool)$_POST['rb'] : true;
         
@@ -87,8 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $useMaxSize = true;
     } else {
         // Default to global default resolution if invalid format
-        global $defaultResolution;
-        if (preg_match('/^(\d+)x(\d+)$/', $defaultResolution, $matches)) {
+        global $defRes;
+        if (preg_match('/^(\d+)x(\d+)$/', $defRes, $matches)) {
             $tgtWidth = intval($matches[1]);
             $tgtHeight = intval($matches[2]);
         } else {
@@ -106,8 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $levels = pow(2, $bits);
         
     // Get allowed formats
-    global $allowedFormats;
-    if (!in_array($fmt, $allowedFormats)) {
+    global $formats;
+    if (!in_array($fmt, $formats)) {
         // Default to png if invalid format
         $fmt = 'png';
     }
@@ -142,8 +142,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Get format from query parameter, default to png
     $fmt = isset($_GET['fmt']) ? strtolower($_GET['fmt']) : 'png';
-    global $allowedFormats;
-    if (!in_array($fmt, $allowedFormats)) {
+    global $formats;
+    if (!in_array($fmt, $formats)) {
         // Default to png if invalid format
         $fmt = 'png';
     }
@@ -173,8 +173,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $useMaxSize = true;
     } else {
         // Default to global default resolution if invalid format
-        global $defaultResolution;
-        if (preg_match('/^(\d+)x(\d+)$/', $defaultResolution, $matches)) {
+        global $defRes;
+        if (preg_match('/^(\d+)x(\d+)$/', $defRes, $matches)) {
             $tgtWidth = intval($matches[1]);
             $tgtHeight = intval($matches[2]);
         } else {
@@ -1006,10 +1006,10 @@ function displayForm() {
     
     <form method="POST" action="" enctype="multipart/form-data">
         <div>
-            <label for="image_source">Image Source:</label>
+            <label for="image_source">Image source:</label>
             <select id="image_source" name="image_source" onchange="toggleSourceFields()">
                 <option value="url">Via URL</option>
-                <option value="file">Upload File</option>
+                <option value="file">Upload file</option>
                 <option value="collection">Collection</option>
             </select>
         </div>
@@ -1020,7 +1020,7 @@ function displayForm() {
         </div>
         
         <div id="file_field" style="display:none">
-            <label for="image">Select Image File:</label>
+            <label for="image">Select image file:</label>
             <input type="file" id="image" name="image" accept="image/*">
         </div>
         
@@ -1033,12 +1033,12 @@ function displayForm() {
                     echo '<option value="' . $id . '">' . $collection['name'] . '</option>';
                 }
                 ?>
-                <option value="any">Random Collection</option>
+                <option value="any">Random collection</option>
             </select>
         </div>
         
         <div>
-            <label for="fmt">Output Format:</label>
+            <label for="fmt">Output format:</label>
             <select id="fmt" name="fmt">
                 <option value="png">PNG</option>
                 <option value="jpg">JPG</option>
@@ -1049,27 +1049,27 @@ function displayForm() {
         </div>
         
         <div>
-            <label for="bits">Grayscale Bits: <span id="bits_value">1</span></label>
+            <label for="bits">Grayscale bits: <span id="bits_value">1</span></label>
             <input type="range" id="bits" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_value').textContent = this.value">
         </div>
         
         <div>
-            <label for="ditherMethod">Dithering Method:</label>
+            <label for="ditherMethod">Dithering method:</label>
             <select id="ditherMethod" name="dth">
                 <option value="none">None</option>
-                <option value="fs" selected>Floyd-Steinberg</option>
-                <option value="ak">Atkinson</option>
-                <option value="jv">Jarvis, Judice & Ninke</option>
-                <option value="sk">Stucki</option>
-                <option value="bk">Burkes</option>
-                <option value="by">Bayer 2x2</option>
+                <?php
+                global $dthMethods;
+                foreach ($dthMethods as $id => $name) {
+                    echo '<option value="' . $id . '">' . $name . '</option>';
+                }
+                ?>
             </select>
         </div>
         
         <div>
             <label>
                 <input type="checkbox" id="rb" name="rb" value="1" checked>
-                Reduce Color Bleeding
+                Reduce color bleeding
             </label>
         </div>
         
@@ -1103,7 +1103,7 @@ function displayResult($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $
             <?php echo strtoupper($fmt); ?> |
             <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?> |
             <?php echo $bits; ?> bits |
-            <?php global $ditheringMethods; echo isset($ditheringMethods[$dth]) ? $ditheringMethods[$dth] : $dth; ?> |
+            <?php global $dthMethods; echo isset($dthMethods[$dth]) ? $dthMethods[$dth] : $dth; ?> |
             <?php echo $rb ? 'reduce bleeding' : ''; ?>
             </small>
         </p>
