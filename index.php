@@ -583,11 +583,15 @@ function dthFloydSteinberg($image, $levels, $rb = true) {
     // Calculate quantization step
     $step = 255 / ($levels - 1);
     
-    // Create error diffusion buffer
-    $errors = array_fill(0, $width, 0);
+    // Create error diffusion buffer for current and next row
+    $currentErrors = array_fill(0, $width, 0);
+    $nextErrors = array_fill(0, $width, 0);
     
     for ($y = 0; $y < $height; $y++) {
-        $nextErrors = array_fill(0, $width, 0);
+        // Reset next row errors
+        for ($i = 0; $i < $width; $i++) {
+            $nextErrors[$i] = 0;
+        }
         
         for ($x = 0; $x < $width; $x++) {
             // Get original pixel value
@@ -595,7 +599,7 @@ function dthFloydSteinberg($image, $levels, $rb = true) {
             $gray = ($rgb >> 16) & 0xFF;
             
             // Add error from previous row
-            $gray = $gray + $errors[$x];
+            $gray = $gray + $currentErrors[$x];
             
             // Quantize to specified number of levels
             $quantized = round(round($gray / $step) * $step);
@@ -605,13 +609,13 @@ function dthFloydSteinberg($image, $levels, $rb = true) {
             // Calculate quantization error
             $error = $gray - $quantized;
             
+            // Set the quantized pixel
+            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
+            imagesetpixel($image, $x, $y, $newColor);
+            
+            // Distribute error to neighboring pixels
             if ($rb) {
-                // Distribute error using reduced Floyd-Steinberg coefficients
-                // Reduce bleeding by using smaller fractions (half the original values)
-                // Current pixel: 0 (already processed)
-                // Right pixel: 7/32 (instead of 7/16)
-                // Below left: 3/32 (instead of 3/16), Below: 5/32 (instead of 5/16), Below right: 1/32 (instead of 1/16)
-                
+                // Reduced bleeding mode - use half the standard coefficients
                 if ($x + 1 < $width) {
                     $nextErrors[$x + 1] += $error * (7/32);
                 }
@@ -626,11 +630,7 @@ function dthFloydSteinberg($image, $levels, $rb = true) {
                     }
                 }
             } else {
-                // Distribute error using standard Floyd-Steinberg coefficients
-                // Current pixel: 0 (already processed)
-                // Right pixel: 7/16
-                // Below left: 3/16, Below: 5/16, Below right: 1/16
-                
+                // Standard Floyd-Steinberg coefficients
                 if ($x + 1 < $width) {
                     $nextErrors[$x + 1] += $error * (7/16);
                 }
@@ -645,14 +645,12 @@ function dthFloydSteinberg($image, $levels, $rb = true) {
                     }
                 }
             }
-            
-            // Set the quantized pixel
-            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
-            imagesetpixel($image, $x, $y, $newColor);
         }
         
-        // Move to next row
-        $errors = $nextErrors;
+        // Swap error buffers
+        $temp = $currentErrors;
+        $currentErrors = $nextErrors;
+        $nextErrors = $temp;
     }
 }
 
@@ -673,11 +671,19 @@ function dthAtkinson($image, $levels, $rb = true) {
     // Calculate quantization step
     $step = 255 / ($levels - 1);
     
-    // Create error diffusion buffer
-    $errors = array_fill(0, $width, 0);
+    // Create error diffusion buffer for current and next rows
+    $currentErrors = array_fill(0, $width, 0);
+    $nextErrors = array_fill(0, $width, 0);
+    $nextNextErrors = array_fill(0, $width, 0);
     
     for ($y = 0; $y < $height; $y++) {
-        $nextErrors = array_fill(0, $width, 0);
+        // Reset next row errors
+        for ($i = 0; $i < $width; $i++) {
+            $nextErrors[$i] = 0;
+            if ($y + 1 < $height) {
+                $nextNextErrors[$i] = 0;
+            }
+        }
         
         for ($x = 0; $x < $width; $x++) {
             // Get original pixel value
@@ -685,7 +691,7 @@ function dthAtkinson($image, $levels, $rb = true) {
             $gray = ($rgb >> 16) & 0xFF;
             
             // Add error from previous row
-            $gray = $gray + $errors[$x];
+            $gray = $gray + $currentErrors[$x];
             
             // Quantize to specified number of levels
             $quantized = round(round($gray / $step) * $step);
@@ -695,16 +701,22 @@ function dthAtkinson($image, $levels, $rb = true) {
             // Calculate quantization error
             $error = $gray - $quantized;
             
-            // Distribute error using Atkinson coefficients (1/8 for each neighbor)
-            // Reduce bleeding if requested by using 1/16 instead of 1/8
+            // Set the quantized pixel
+            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
+            imagesetpixel($image, $x, $y, $newColor);
+            
+            // Distribute error to neighboring pixels
             $errorFraction = $rb ? (1/16) : (1/8);
             
+            // Right neighbors
             if ($x + 1 < $width) {
                 $nextErrors[$x + 1] += $error * $errorFraction;
             }
             if ($x + 2 < $width) {
                 $nextErrors[$x + 2] += $error * $errorFraction;
             }
+            
+            // Below neighbors
             if ($y + 1 < $height) {
                 if ($x > 0) {
                     $nextErrors[$x - 1] += $error * $errorFraction;
@@ -714,17 +726,18 @@ function dthAtkinson($image, $levels, $rb = true) {
                     $nextErrors[$x + 1] += $error * $errorFraction;
                 }
             }
-            if ($y + 2 < $height) {
-                $nextErrors[$x] += $error * $errorFraction;
-            }
             
-            // Set the quantized pixel
-            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
-            imagesetpixel($image, $x, $y, $newColor);
+            // Two rows below
+            if ($y + 2 < $height) {
+                $nextNextErrors[$x] += $error * $errorFraction;
+            }
         }
         
-        // Move to next row
-        $errors = $nextErrors;
+        // Shift error buffers
+        $temp = $currentErrors;
+        $currentErrors = $nextErrors;
+        $nextErrors = $nextNextErrors;
+        $nextNextErrors = $temp;
     }
 }
 
@@ -745,11 +758,19 @@ function dthJarvis($image, $levels, $rb = true) {
     // Calculate quantization step
     $step = 255 / ($levels - 1);
     
-    // Create error diffusion buffer
-    $errors = array_fill(0, $width, 0);
+    // Create error diffusion buffers for current and next two rows
+    $currentErrors = array_fill(0, $width, 0);
+    $nextErrors = array_fill(0, $width, 0);
+    $nextNextErrors = array_fill(0, $width, 0);
     
     for ($y = 0; $y < $height; $y++) {
-        $nextErrors = array_fill(0, $width, 0);
+        // Reset next row errors
+        for ($i = 0; $i < $width; $i++) {
+            $nextErrors[$i] = 0;
+            if ($y + 1 < $height) {
+                $nextNextErrors[$i] = 0;
+            }
+        }
         
         for ($x = 0; $x < $width; $x++) {
             // Get original pixel value
@@ -757,7 +778,7 @@ function dthJarvis($image, $levels, $rb = true) {
             $gray = ($rgb >> 16) & 0xFF;
             
             // Add error from previous row
-            $gray = $gray + $errors[$x];
+            $gray = $gray + $currentErrors[$x];
             
             // Quantize to specified number of levels
             $quantized = round(round($gray / $step) * $step);
@@ -767,83 +788,85 @@ function dthJarvis($image, $levels, $rb = true) {
             // Calculate quantization error
             $error = $gray - $quantized;
             
-            if ($rb) {
-                // Distribute error using reduced Jarvis coefficients (half the original values)
-                // Row below: 7/48, 5/48, 3/48, 5/48, 7/48
-                // Two rows below: 3/48, 5/48, 7/48, 5/48, 3/48
-                if ($x - 2 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 2] += $error * (7/96);
-                }
-                if ($x - 1 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 1] += $error * (5/96);
-                }
-                if ($y + 1 < $height) {
-                    $nextErrors[$x] += $error * (3/96);
-                }
-                if ($x + 1 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 1] += $error * (5/96);
-                }
-                if ($x + 2 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 2] += $error * (7/96);
-                }
-                if ($x - 2 >= 0 && $y + 2 < $height) {
-                    $nextErrors[$x - 2] += $error * (3/96);
-                }
-                if ($x - 1 >= 0 && $y + 2 < $height) {
-                    $nextErrors[$x - 1] += $error * (5/96);
-                }
-                if ($y + 2 < $height) {
-                    $nextErrors[$x] += $error * (7/96);
-                }
-                if ($x + 1 < $width && $y + 2 < $height) {
-                    $nextErrors[$x + 1] += $error * (5/96);
-                }
-                if ($x + 2 < $width && $y + 2 < $height) {
-                    $nextErrors[$x + 2] += $error * (3/96);
-                }
-            } else {
-                // Distribute error using standard Jarvis coefficients
-                // Row below: 7/48, 5/48, 3/48, 5/48, 7/48
-                // Two rows below: 3/48, 5/48, 7/48, 5/48, 3/48
-                if ($x - 2 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 2] += $error * (7/48);
-                }
-                if ($x - 1 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 1] += $error * (5/48);
-                }
-                if ($y + 1 < $height) {
-                    $nextErrors[$x] += $error * (3/48);
-                }
-                if ($x + 1 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 1] += $error * (5/48);
-                }
-                if ($x + 2 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 2] += $error * (7/48);
-                }
-                if ($x - 2 >= 0 && $y + 2 < $height) {
-                    $nextErrors[$x - 2] += $error * (3/48);
-                }
-                if ($x - 1 >= 0 && $y + 2 < $height) {
-                    $nextErrors[$x - 1] += $error * (5/48);
-                }
-                if ($y + 2 < $height) {
-                    $nextErrors[$x] += $error * (7/48);
-                }
-                if ($x + 1 < $width && $y + 2 < $height) {
-                    $nextErrors[$x + 1] += $error * (5/48);
-                }
-                if ($x + 2 < $width && $y + 2 < $height) {
-                    $nextErrors[$x + 2] += $error * (3/48);
-                }
-            }
-            
             // Set the quantized pixel
             $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
             imagesetpixel($image, $x, $y, $newColor);
+            
+            // Distribute error to neighboring pixels
+            if ($rb) {
+                // Reduced bleeding mode - use half the standard coefficients (1/96 instead of 1/48)
+                // Row below: 7/96, 5/96, 3/96, 5/96, 7/96
+                if ($x - 2 >= 0) {
+                    $nextErrors[$x - 2] += $error * (7/96);
+                }
+                if ($x - 1 >= 0) {
+                    $nextErrors[$x - 1] += $error * (5/96);
+                }
+                $nextErrors[$x] += $error * (3/96);
+                if ($x + 1 < $width) {
+                    $nextErrors[$x + 1] += $error * (5/96);
+                }
+                if ($x + 2 < $width) {
+                    $nextErrors[$x + 2] += $error * (7/96);
+                }
+                
+                // Two rows below: 3/96, 5/96, 7/96, 5/96, 3/96
+                if ($y + 1 < $height) {
+                    if ($x - 2 >= 0) {
+                        $nextNextErrors[$x - 2] += $error * (3/96);
+                    }
+                    if ($x - 1 >= 0) {
+                        $nextNextErrors[$x - 1] += $error * (5/96);
+                    }
+                    $nextNextErrors[$x] += $error * (7/96);
+                    if ($x + 1 < $width) {
+                        $nextNextErrors[$x + 1] += $error * (5/96);
+                    }
+                    if ($x + 2 < $width) {
+                        $nextNextErrors[$x + 2] += $error * (3/96);
+                    }
+                }
+            } else {
+                // Standard Jarvis coefficients (1/48)
+                // Row below: 7/48, 5/48, 3/48, 5/48, 7/48
+                if ($x - 2 >= 0) {
+                    $nextErrors[$x - 2] += $error * (7/48);
+                }
+                if ($x - 1 >= 0) {
+                    $nextErrors[$x - 1] += $error * (5/48);
+                }
+                $nextErrors[$x] += $error * (3/48);
+                if ($x + 1 < $width) {
+                    $nextErrors[$x + 1] += $error * (5/48);
+                }
+                if ($x + 2 < $width) {
+                    $nextErrors[$x + 2] += $error * (7/48);
+                }
+                
+                // Two rows below: 3/48, 5/48, 7/48, 5/48, 3/48
+                if ($y + 1 < $height) {
+                    if ($x - 2 >= 0) {
+                        $nextNextErrors[$x - 2] += $error * (3/48);
+                    }
+                    if ($x - 1 >= 0) {
+                        $nextNextErrors[$x - 1] += $error * (5/48);
+                    }
+                    $nextNextErrors[$x] += $error * (7/48);
+                    if ($x + 1 < $width) {
+                        $nextNextErrors[$x + 1] += $error * (5/48);
+                    }
+                    if ($x + 2 < $width) {
+                        $nextNextErrors[$x + 2] += $error * (3/48);
+                    }
+                }
+            }
         }
         
-        // Move to next row
-        $errors = $nextErrors;
+        // Shift error buffers
+        $temp = $currentErrors;
+        $currentErrors = $nextErrors;
+        $nextErrors = $nextNextErrors;
+        $nextNextErrors = $temp;
     }
 }
 
@@ -864,11 +887,19 @@ function dthStucki($image, $levels, $rb = true) {
     // Calculate quantization step
     $step = 255 / ($levels - 1);
     
-    // Create error diffusion buffer
-    $errors = array_fill(0, $width, 0);
+    // Create error diffusion buffers for current and next two rows
+    $currentErrors = array_fill(0, $width, 0);
+    $nextErrors = array_fill(0, $width, 0);
+    $nextNextErrors = array_fill(0, $width, 0);
     
     for ($y = 0; $y < $height; $y++) {
-        $nextErrors = array_fill(0, $width, 0);
+        // Reset next row errors
+        for ($i = 0; $i < $width; $i++) {
+            $nextErrors[$i] = 0;
+            if ($y + 1 < $height) {
+                $nextNextErrors[$i] = 0;
+            }
+        }
         
         for ($x = 0; $x < $width; $x++) {
             // Get original pixel value
@@ -876,7 +907,7 @@ function dthStucki($image, $levels, $rb = true) {
             $gray = ($rgb >> 16) & 0xFF;
             
             // Add error from previous row
-            $gray = $gray + $errors[$x];
+            $gray = $gray + $currentErrors[$x];
             
             // Quantize to specified number of levels
             $quantized = round(round($gray / $step) * $step);
@@ -886,83 +917,85 @@ function dthStucki($image, $levels, $rb = true) {
             // Calculate quantization error
             $error = $gray - $quantized;
             
-            if ($rb) {
-                // Distribute error using reduced Stucki coefficients (half the original values)
-                // Row below: 8/42, 4/42, 2/42, 4/42, 8/42
-                // Two rows below: 2/42, 4/42, 8/42, 4/42, 2/42
-                if ($x - 2 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 2] += $error * (8/84);
-                }
-                if ($x - 1 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 1] += $error * (4/84);
-                }
-                if ($y + 1 < $height) {
-                    $nextErrors[$x] += $error * (2/84);
-                }
-                if ($x + 1 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 1] += $error * (4/84);
-                }
-                if ($x + 2 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 2] += $error * (8/84);
-                }
-                if ($x - 2 >= 0 && $y + 2 < $height) {
-                    $nextErrors[$x - 2] += $error * (2/84);
-                }
-                if ($x - 1 >= 0 && $y + 2 < $height) {
-                    $nextErrors[$x - 1] += $error * (4/84);
-                }
-                if ($y + 2 < $height) {
-                    $nextErrors[$x] += $error * (8/84);
-                }
-                if ($x + 1 < $width && $y + 2 < $height) {
-                    $nextErrors[$x + 1] += $error * (4/84);
-                }
-                if ($x + 2 < $width && $y + 2 < $height) {
-                    $nextErrors[$x + 2] += $error * (2/84);
-                }
-            } else {
-                // Distribute error using standard Stucki coefficients
-                // Row below: 8/42, 4/42, 2/42, 4/42, 8/42
-                // Two rows below: 2/42, 4/42, 8/42, 4/42, 2/42
-                if ($x - 2 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 2] += $error * (8/42);
-                }
-                if ($x - 1 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 1] += $error * (4/42);
-                }
-                if ($y + 1 < $height) {
-                    $nextErrors[$x] += $error * (2/42);
-                }
-                if ($x + 1 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 1] += $error * (4/42);
-                }
-                if ($x + 2 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 2] += $error * (8/42);
-                }
-                if ($x - 2 >= 0 && $y + 2 < $height) {
-                    $nextErrors[$x - 2] += $error * (2/42);
-                }
-                if ($x - 1 >= 0 && $y + 2 < $height) {
-                    $nextErrors[$x - 1] += $error * (4/42);
-                }
-                if ($y + 2 < $height) {
-                    $nextErrors[$x] += $error * (8/42);
-                }
-                if ($x + 1 < $width && $y + 2 < $height) {
-                    $nextErrors[$x + 1] += $error * (4/42);
-                }
-                if ($x + 2 < $width && $y + 2 < $height) {
-                    $nextErrors[$x + 2] += $error * (2/42);
-                }
-            }
-            
             // Set the quantized pixel
             $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
             imagesetpixel($image, $x, $y, $newColor);
+            
+            // Distribute error to neighboring pixels
+            if ($rb) {
+                // Reduced bleeding mode - use half the standard coefficients
+                // Row below: 8/84, 4/84, 2/84, 4/84, 8/84
+                if ($x - 2 >= 0) {
+                    $nextErrors[$x - 2] += $error * (8/84);
+                }
+                if ($x - 1 >= 0) {
+                    $nextErrors[$x - 1] += $error * (4/84);
+                }
+                $nextErrors[$x] += $error * (2/84);
+                if ($x + 1 < $width) {
+                    $nextErrors[$x + 1] += $error * (4/84);
+                }
+                if ($x + 2 < $width) {
+                    $nextErrors[$x + 2] += $error * (8/84);
+                }
+                
+                // Two rows below: 2/84, 4/84, 8/84, 4/84, 2/84
+                if ($y + 1 < $height) {
+                    if ($x - 2 >= 0) {
+                        $nextNextErrors[$x - 2] += $error * (2/84);
+                    }
+                    if ($x - 1 >= 0) {
+                        $nextNextErrors[$x - 1] += $error * (4/84);
+                    }
+                    $nextNextErrors[$x] += $error * (8/84);
+                    if ($x + 1 < $width) {
+                        $nextNextErrors[$x + 1] += $error * (4/84);
+                    }
+                    if ($x + 2 < $width) {
+                        $nextNextErrors[$x + 2] += $error * (2/84);
+                    }
+                }
+            } else {
+                // Standard Stucki coefficients
+                // Row below: 8/42, 4/42, 2/42, 4/42, 8/42
+                if ($x - 2 >= 0) {
+                    $nextErrors[$x - 2] += $error * (8/42);
+                }
+                if ($x - 1 >= 0) {
+                    $nextErrors[$x - 1] += $error * (4/42);
+                }
+                $nextErrors[$x] += $error * (2/42);
+                if ($x + 1 < $width) {
+                    $nextErrors[$x + 1] += $error * (4/42);
+                }
+                if ($x + 2 < $width) {
+                    $nextErrors[$x + 2] += $error * (8/42);
+                }
+                
+                // Two rows below: 2/42, 4/42, 8/42, 4/42, 2/42
+                if ($y + 1 < $height) {
+                    if ($x - 2 >= 0) {
+                        $nextNextErrors[$x - 2] += $error * (2/42);
+                    }
+                    if ($x - 1 >= 0) {
+                        $nextNextErrors[$x - 1] += $error * (4/42);
+                    }
+                    $nextNextErrors[$x] += $error * (8/42);
+                    if ($x + 1 < $width) {
+                        $nextNextErrors[$x + 1] += $error * (4/42);
+                    }
+                    if ($x + 2 < $width) {
+                        $nextNextErrors[$x + 2] += $error * (2/42);
+                    }
+                }
+            }
         }
         
-        // Move to next row
-        $errors = $nextErrors;
+        // Shift error buffers
+        $temp = $currentErrors;
+        $currentErrors = $nextErrors;
+        $nextErrors = $nextNextErrors;
+        $nextNextErrors = $temp;
     }
 }
 
@@ -1029,11 +1062,15 @@ function dthBurkes($image, $levels, $rb = true) {
     // Calculate quantization step
     $step = 255 / ($levels - 1);
     
-    // Create error diffusion buffer
-    $errors = array_fill(0, $width, 0);
+    // Create error diffusion buffers for current and next row
+    $currentErrors = array_fill(0, $width, 0);
+    $nextErrors = array_fill(0, $width, 0);
     
     for ($y = 0; $y < $height; $y++) {
-        $nextErrors = array_fill(0, $width, 0);
+        // Reset next row errors
+        for ($i = 0; $i < $width; $i++) {
+            $nextErrors[$i] = 0;
+        }
         
         for ($x = 0; $x < $width; $x++) {
             // Get original pixel value
@@ -1041,7 +1078,7 @@ function dthBurkes($image, $levels, $rb = true) {
             $gray = ($rgb >> 16) & 0xFF;
             
             // Add error from previous row
-            $gray = $gray + $errors[$x];
+            $gray = $gray + $currentErrors[$x];
             
             // Quantize to specified number of levels
             $quantized = round(round($gray / $step) * $step);
@@ -1051,51 +1088,48 @@ function dthBurkes($image, $levels, $rb = true) {
             // Calculate quantization error
             $error = $gray - $quantized;
             
-            if ($rb) {
-                // Distribute error using reduced Burkes coefficients (half the original values)
-                // Row below: 8/32, 4/32, 2/32, 4/32, 8/32
-                if ($x - 2 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 2] += $error * (8/64);
-                }
-                if ($x - 1 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 1] += $error * (4/64);
-                }
-                if ($y + 1 < $height) {
-                    $nextErrors[$x] += $error * (2/64);
-                }
-                if ($x + 1 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 1] += $error * (4/64);
-                }
-                if ($x + 2 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 2] += $error * (8/64);
-                }
-            } else {
-                // Distribute error using standard Burkes coefficients
-                // Row below: 8/32, 4/32, 2/32, 4/32, 8/32
-                if ($x - 2 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 2] += $error * (8/32);
-                }
-                if ($x - 1 >= 0 && $y + 1 < $height) {
-                    $nextErrors[$x - 1] += $error * (4/32);
-                }
-                if ($y + 1 < $height) {
-                    $nextErrors[$x] += $error * (2/32);
-                }
-                if ($x + 1 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 1] += $error * (4/32);
-                }
-                if ($x + 2 < $width && $y + 1 < $height) {
-                    $nextErrors[$x + 2] += $error * (8/32);
-                }
-            }
-            
             // Set the quantized pixel
             $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
             imagesetpixel($image, $x, $y, $newColor);
+            
+            // Distribute error to neighboring pixels
+            if ($rb) {
+                // Reduced bleeding mode - use half the standard coefficients
+                if ($x - 2 >= 0) {
+                    $nextErrors[$x - 2] += $error * (8/64);
+                }
+                if ($x - 1 >= 0) {
+                    $nextErrors[$x - 1] += $error * (4/64);
+                }
+                $nextErrors[$x] += $error * (2/64);
+                if ($x + 1 < $width) {
+                    $nextErrors[$x + 1] += $error * (4/64);
+                }
+                if ($x + 2 < $width) {
+                    $nextErrors[$x + 2] += $error * (8/64);
+                }
+            } else {
+                // Standard Burkes coefficients
+                if ($x - 2 >= 0) {
+                    $nextErrors[$x - 2] += $error * (8/32);
+                }
+                if ($x - 1 >= 0) {
+                    $nextErrors[$x - 1] += $error * (4/32);
+                }
+                $nextErrors[$x] += $error * (2/32);
+                if ($x + 1 < $width) {
+                    $nextErrors[$x + 1] += $error * (4/32);
+                }
+                if ($x + 2 < $width) {
+                    $nextErrors[$x + 2] += $error * (8/32);
+                }
+            }
         }
         
-        // Move to next row
-        $errors = $nextErrors;
+        // Swap error buffers
+        $temp = $currentErrors;
+        $currentErrors = $nextErrors;
+        $nextErrors = $temp;
     }
 }
 
