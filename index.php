@@ -1298,6 +1298,20 @@ try {
                 <h2>Process Another Image</h2>
                 <?php echo $formOutput; ?>
             </div>
+            
+            <script>
+                function toggleSourceFields() {
+                    var source = document.getElementById('image_source').value;
+                    document.getElementById('url_field').style.display = source === 'url' ? 'block' : 'none';
+                    document.getElementById('file_field').style.display = source === 'file' ? 'block' : 'none';
+                    document.getElementById('collection_field').style.display = source === 'collection' ? 'block' : 'none';
+                }
+                
+                // Initialize the form fields based on the default selection
+                if (document.getElementById('image_source')) {
+                    toggleSourceFields();
+                }
+            </script>
         </main>
     </body>
     </html>
@@ -1342,6 +1356,20 @@ try {
                 <h2>Try Again</h2>
                 <?php echo $formOutput; ?>
             </div>
+            
+            <script>
+                function toggleSourceFields() {
+                    var source = document.getElementById('image_source').value;
+                    document.getElementById('url_field').style.display = source === 'url' ? 'block' : 'none';
+                    document.getElementById('file_field').style.display = source === 'file' ? 'block' : 'none';
+                    document.getElementById('collection_field').style.display = source === 'collection' ? 'block' : 'none';
+                }
+                
+                // Initialize the form fields based on the default selection
+                if (document.getElementById('image_source')) {
+                    toggleSourceFields();
+                }
+            </script>
         </main>
     </body>
     </html>
