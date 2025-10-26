@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
     $bits = isset($_POST['bits']) ? intval($_POST['bits']) : 1;
     $res = isset($_POST['res']) ? $_POST['res'] : '296x128';
-    $ditherMethod = isset($_POST['ditherMethod']) ? $_POST['ditherMethod'] : 'floyd-steinberg';
+    $ditherMethod = isset($_POST['dth']) ? $_POST['dth'] : 'floyd-steinberg';
     $reduceBleeding = isset($_POST['reduceBleeding']) ? (bool)$_POST['reduceBleeding'] : true;
         
     // Validate and parse resolution
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
         
     // Get dithering parameters
-    $ditherMethod = isset($_GET['ditherMethod']) ? $_GET['ditherMethod'] : 'floyd-steinberg';
+    $ditherMethod = isset($_GET['dth']) ? $_GET['dth'] : 'floyd-steinberg';
     $reduceBleeding = isset($_GET['reduceBleeding']) ? (bool)$_GET['reduceBleeding'] : true;
         
     // If no 'col' or 'url' are provided, show the upload form
@@ -144,7 +144,7 @@ function showUploadForm() {
                     </div>
                     <div>
                         <label for="ditherMethod_url">Dithering Method:</label>
-                        <select id="ditherMethod_url" name="ditherMethod">
+                        <select id="ditherMethod_url" name="dth">
                             <option value="none">None</option>
                             <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
                             <option value="atkinson">Atkinson</option>
@@ -190,7 +190,7 @@ function showUploadForm() {
                     </div>
                     <div>
                         <label for="ditherMethod_file">Dithering Method:</label>
-                        <select id="ditherMethod_file" name="ditherMethod">
+                        <select id="ditherMethod_file" name="dth">
                             <option value="none">None</option>
                             <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
                             <option value="atkinson">Atkinson</option>
@@ -242,7 +242,7 @@ function showUploadForm() {
                     </div>
                     <div>
                         <label for="ditherMethod_col">Dithering Method:</label>
-                        <select id="ditherMethod_col" name="ditherMethod">
+                        <select id="ditherMethod_col" name="dth">
                             <option value="none">None</option>
                             <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
                             <option value="atkinson">Atkinson</option>
