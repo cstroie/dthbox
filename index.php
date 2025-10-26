@@ -2,11 +2,13 @@
 // Fetch and process art images from specified collection
 // Then crop and scale it to 296x128 format and return in specified format
 
-// Define available collections and formats globally
+// Define available collections, formats, and default resolution globally
 global $collections;
 $collections = ['apod', 'tic', 'jux', 'veri'];
 global $allowedFormats;
 $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
+global $defaultResolution;
+$defaultResolution = '296x128';
 
 // Check if this is a POST request with image data
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -32,9 +34,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetHeight = $maxSize;
         $useMaxSize = true;
     } else {
-        // Default to 296x128 if invalid format
-        $targetWidth = 296;
-        $targetHeight = 128;
+        // Default to global default resolution if invalid format
+        global $defaultResolution;
+        if (preg_match('/^(\d+)x(\d+)$/', $defaultResolution, $matches)) {
+            $targetWidth = intval($matches[1]);
+            $targetHeight = intval($matches[2]);
+        } else {
+            $targetWidth = 296;
+            $targetHeight = 128;
+        }
+        // Ensure reasonable limits to prevent abuse
+        $targetWidth = max(1, min(2000, $targetWidth));
+        $targetHeight = max(1, min(2000, $targetHeight));
     }
         
     // Clamp bits between 1 and 8
@@ -95,9 +106,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetHeight = $maxSize;
         $useMaxSize = true;
     } else {
-        // Default to 296x128 if invalid format
-        $targetWidth = 296;
-        $targetHeight = 128;
+        // Default to global default resolution if invalid format
+        global $defaultResolution;
+        if (preg_match('/^(\d+)x(\d+)$/', $defaultResolution, $matches)) {
+            $targetWidth = intval($matches[1]);
+            $targetHeight = intval($matches[2]);
+        } else {
+            $targetWidth = 296;
+            $targetHeight = 128;
+        }
+        // Ensure reasonable limits to prevent abuse
+        $targetWidth = max(1, min(2000, $targetWidth));
+        $targetHeight = max(1, min(2000, $targetHeight));
     }
         
     // Get dithering parameters
