@@ -18,6 +18,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Ensure reasonable limits to prevent abuse
         $targetWidth = max(1, min(2000, $targetWidth));
         $targetHeight = max(1, min(2000, $targetHeight));
+    } else if (is_numeric($res)) {
+        // If res is a single number, treat it as maximum size
+        $maxSize = max(1, min(2000, intval($res)));
+        // We'll determine actual dimensions after loading the image
+        $targetWidth = $maxSize;
+        $targetHeight = $maxSize;
+        $useMaxSize = true;
     } else {
         // Default to 296x128 if invalid format
         $targetWidth = 296;
@@ -74,6 +81,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Ensure reasonable limits to prevent abuse
         $targetWidth = max(1, min(2000, $targetWidth));
         $targetHeight = max(1, min(2000, $targetHeight));
+    } else if (is_numeric($res)) {
+        // If res is a single number, treat it as maximum size
+        $maxSize = max(1, min(2000, intval($res)));
+        // We'll determine actual dimensions after loading the image
+        $targetWidth = $maxSize;
+        $targetHeight = $maxSize;
+        $useMaxSize = true;
     } else {
         // Default to 296x128 if invalid format
         $targetWidth = 296;
@@ -527,7 +541,7 @@ function fetchRandomImage($collection) {
     }
 }
 
-function processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherMethod, $reduceBleeding) {
+function processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherMethod, $reduceBleeding, $useMaxSize = false) {
     // Create image from data
     $srcImage = imagecreatefromstring($imageData);
     
@@ -539,22 +553,45 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherM
     $srcWidth = imagesx($srcImage);
     $srcHeight = imagesy($srcImage);
     
-    // Calculate crop dimensions to maintain aspect ratio
-    $srcRatio = $srcWidth / $srcHeight;
-    $targetRatio = $targetWidth / $targetHeight;
-    
-    if ($srcRatio > $targetRatio) {
-        // Source is wider, crop width
-        $cropWidth = $srcHeight * $targetRatio;
+    // If using max size, calculate target dimensions while maintaining aspect ratio
+    if ($useMaxSize) {
+        $maxSize = $targetWidth; // Both width and height are set to the same max value
+        if ($srcWidth > $srcHeight) {
+            // Landscape image
+            $targetWidth = $maxSize;
+            $targetHeight = intval($srcHeight * $maxSize / $srcWidth);
+        } else {
+            // Portrait or square image
+            $targetHeight = $maxSize;
+            $targetWidth = intval($srcWidth * $maxSize / $srcHeight);
+        }
+        // Ensure dimensions are at least 1
+        $targetWidth = max(1, $targetWidth);
+        $targetHeight = max(1, $targetHeight);
+        
+        // Set crop dimensions to full image (no cropping)
+        $cropWidth = $srcWidth;
         $cropHeight = $srcHeight;
-        $srcX = ($srcWidth - $cropWidth) / 2;
+        $srcX = 0;
         $srcY = 0;
     } else {
-        // Source is taller, crop height
-        $cropWidth = $srcWidth;
-        $cropHeight = $srcWidth / $targetRatio;
-        $srcX = 0;
-        $srcY = ($srcHeight - $cropHeight) / 2;
+        // Calculate crop dimensions to maintain aspect ratio
+        $srcRatio = $srcWidth / $srcHeight;
+        $targetRatio = $targetWidth / $targetHeight;
+        
+        if ($srcRatio > $targetRatio) {
+            // Source is wider, crop width
+            $cropWidth = $srcHeight * $targetRatio;
+            $cropHeight = $srcHeight;
+            $srcX = ($srcWidth - $cropWidth) / 2;
+            $srcY = 0;
+        } else {
+            // Source is taller, crop height
+            $cropWidth = $srcWidth;
+            $cropHeight = $srcWidth / $targetRatio;
+            $srcX = 0;
+            $srcY = ($srcHeight - $cropHeight) / 2;
+        }
     }
     
     // Create destination image
