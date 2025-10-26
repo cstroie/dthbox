@@ -124,115 +124,43 @@ function showUploadForm() {
                 font-size: 0.9rem;
                 color: var(--pico-muted-color);
             }
+            .form-section {
+                margin-bottom: 1.5rem;
+                padding: 1rem;
+                border: 1px solid var(--pico-muted-border-color);
+                border-radius: 0.25rem;
+            }
+            .form-section h3 {
+                margin-top: 0;
+            }
         </style>
     </head>
     <body>
         <main class="container">
             <h1>DitherBox</h1>
             
-            <div class="tab">
-                <button class="tablinks active" onclick="openTab(event, 'url')">Via URL</button>
-                <button class="tablinks" onclick="openTab(event, 'file')">Upload File</button>
-                <button class="tablinks" onclick="openTab(event, 'collection')">Random Collection</button>
-            </div>
-            
-            <div id="url" class="tabcontent" style="display:block">
-                <form method="GET" action="">
+            <form method="POST" action="" enctype="multipart/form-data">
+                <!-- Image Source Section -->
+                <div class="form-section">
+                    <h3>Image Source</h3>
+                    
+                    <!-- URL Input -->
                     <div>
-                        <label for="url_input">Image URL:</label>
-                        <input type="url" id="url_input" name="url" placeholder="https://example.com/image.jpg">
+                        <label for="url">Image URL:</label>
+                        <input type="url" id="url" name="url" placeholder="https://example.com/image.jpg">
                     </div>
+                    
+                    <!-- File Upload -->
                     <div>
-                        <label for="fmt_url">Output Format:</label>
-                        <select id="fmt_url" name="fmt">
-                            <option value="png">PNG</option>
-                            <option value="jpg">JPG</option>
-                            <option value="ppm">PPM</option>
-                            <option value="pbm">PBM</option>
-                            <option value="gif">GIF</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="bits_url">Grayscale Bits: <span id="bits_url_value">1</span></label>
-                        <input type="range" id="bits_url" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_url_value').textContent = this.value">
-                    </div>
-                    <div>
-                        <label for="dth_url">Dithering Method:</label>
-                        <select id="dth_url" name="dth">
-                            <option value="none">None</option>
-                            <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
-                            <option value="atkinson">Atkinson</option>
-                            <option value="jarvis">Jarvis, Judice & Ninke</option>
-                            <option value="stucki">Stucki</option>
-                            <option value="burkes">Burkes</option>
-                            <option value="bayer2x2">Bayer 2x2</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>
-                            <input type="checkbox" id="rb_url" name="rb" value="1" checked>
-                            Reduce Color Bleeding
-                        </label>
-                    </div>
-                    <div>
-                        <label for="res_url">Resolution (WxH):</label>
-                        <input type="text" id="res_url" name="res" value="296x128" placeholder="296x128">
-                    </div>
-                    <input type="submit" value="Process Image from URL">
-                </form>
-            </div>
-            
-            <div id="file" class="tabcontent" style="display:none">
-                <form method="POST" action="" enctype="multipart/form-data">
-                    <div>
-                        <label for="image">Select Image File:</label>
+                        <label for="image">Upload Image File:</label>
                         <input type="file" id="image" name="image" accept="image/*">
                     </div>
+                    
+                    <!-- Collection Selection -->
                     <div>
-                        <label for="fmt_file">Output Format:</label>
-                        <select id="fmt_file" name="fmt">
-                            <option value="png">PNG</option>
-                            <option value="jpg">JPG</option>
-                            <option value="ppm">PPM</option>
-                            <option value="pbm">PBM</option>
-                            <option value="gif">GIF</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="bits_file">Grayscale Bits: <span id="bits_file_value">1</span></label>
-                        <input type="range" id="bits_file" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_file_value').textContent = this.value">
-                    </div>
-                    <div>
-                        <label for="dth_file">Dithering Method:</label>
-                        <select id="dth_file" name="dth">
-                            <option value="none">None</option>
-                            <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
-                            <option value="atkinson">Atkinson</option>
-                            <option value="jarvis">Jarvis, Judice & Ninke</option>
-                            <option value="stucki">Stucki</option>
-                            <option value="burkes">Burkes</option>
-                            <option value="bayer2x2">Bayer 2x2</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>
-                            <input type="checkbox" id="rb_file" name="rb" value="1" checked>
-                            Reduce Color Bleeding
-                        </label>
-                    </div>
-                    <div>
-                        <label for="res_file">Resolution (WxH):</label>
-                        <input type="text" id="res_file" name="res" value="296x128" placeholder="296x128">
-                    </div>
-                    <input type="submit" value="Process Uploaded Image">
-                </form>
-            </div>
-            
-            <div id="collection" class="tabcontent" style="display:none">
-                <form method="GET" action="">
-                    <div>
-                        <label for="col">Collection:</label>
+                        <label for="col">Random Collection:</label>
                         <select id="col" name="col">
+                            <option value="">-- Select Collection --</option>
                             <option value="apod">Astronomy Picture of the Day</option>
                             <option value="tic">This Is Colossal</option>
                             <option value="jux">Juxtapoz</option>
@@ -240,9 +168,16 @@ function showUploadForm() {
                             <option value="any">Random Collection</option>
                         </select>
                     </div>
+                </div>
+                
+                <!-- Processing Options Section -->
+                <div class="form-section">
+                    <h3>Processing Options</h3>
+                    
+                    <!-- Output Format -->
                     <div>
-                        <label for="fmt_col">Output Format:</label>
-                        <select id="fmt_col" name="fmt">
+                        <label for="fmt">Output Format:</label>
+                        <select id="fmt" name="fmt">
                             <option value="png">PNG</option>
                             <option value="jpg">JPG</option>
                             <option value="ppm">PPM</option>
@@ -250,13 +185,17 @@ function showUploadForm() {
                             <option value="gif">GIF</option>
                         </select>
                     </div>
+                    
+                    <!-- Grayscale Bits -->
                     <div>
-                        <label for="bits_col">Grayscale Bits: <span id="bits_col_value">1</span></label>
-                        <input type="range" id="bits_col" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_col_value').textContent = this.value">
+                        <label for="bits">Grayscale Bits: <span id="bits_value">1</span></label>
+                        <input type="range" id="bits" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_value').textContent = this.value">
                     </div>
+                    
+                    <!-- Dithering Method -->
                     <div>
-                        <label for="dth_col">Dithering Method:</label>
-                        <select id="dth_col" name="dth">
+                        <label for="dth">Dithering Method:</label>
+                        <select id="dth" name="dth">
                             <option value="none">None</option>
                             <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
                             <option value="atkinson">Atkinson</option>
@@ -266,38 +205,28 @@ function showUploadForm() {
                             <option value="bayer2x2">Bayer 2x2</option>
                         </select>
                     </div>
+                    
+                    <!-- Reduce Color Bleeding -->
                     <div>
                         <label>
-                            <input type="checkbox" id="rb_col" name="rb" value="1" checked>
+                            <input type="checkbox" id="rb" name="rb" value="1" checked>
                             Reduce Color Bleeding
                         </label>
                     </div>
+                    
+                    <!-- Resolution -->
                     <div>
-                        <label for="res_col">Resolution (WxH):</label>
-                        <input type="text" id="res_col" name="res" value="296x128" placeholder="296x128">
+                        <label for="res">Resolution (WxH):</label>
+                        <input type="text" id="res" name="res" value="296x128" placeholder="296x128">
                     </div>
-                    <input type="submit" value="Process Random Image">
-                </form>
-            </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <input type="submit" value="Process Image">
+            </form>
             
-            <p class="note">Note: DitherBox processes images with customizable dithering and grayscale levels.</p>
+            <p class="note">Note: DitherBox processes images with customizable dithering and grayscale levels. Provide either a URL, upload a file, or select a collection.</p>
         </main>
-        
-        <script>
-            function openTab(evt, tabName) {
-                var i, tabcontent, tablinks;
-                tabcontent = document.getElementsByClassName("tabcontent");
-                for (i = 0; i < tabcontent.length; i++) {
-                    tabcontent[i].style.display = "none";
-                }
-                tablinks = document.getElementsByClassName("tablinks");
-                for (i = 0; i < tablinks.length; i++) {
-                    tablinks[i].className = tablinks[i].className.replace(" active", "");
-                }
-                document.getElementById(tabName).style.display = "block";
-                evt.currentTarget.className += " active";
-            }
-        </script>
     </body>
     </html>
     <?php
