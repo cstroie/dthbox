@@ -7,8 +7,8 @@ global $collections;
 $collections = ['apod', 'tic', 'jux', 'veri'];
 global $formats;
 $formats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
-global $defaultResolution;
-$defaultResolution = '296x128';
+global $defRes;
+$defRes = '296x128';
 
 // Check if this is a POST request with image data
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -35,8 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $useMaxSize = true;
     } else {
         // Default to global default resolution if invalid format
-        global $defaultResolution;
-        if (preg_match('/^(\d+)x(\d+)$/', $defaultResolution, $matches)) {
+        global $defRes;
+        if (preg_match('/^(\d+)x(\d+)$/', $defRes, $matches)) {
             $targetWidth = intval($matches[1]);
             $targetHeight = intval($matches[2]);
         } else {
@@ -108,8 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $useMaxSize = true;
     } else {
         // Default to global default resolution if invalid format
-        global $defaultResolution;
-        if (preg_match('/^(\d+)x(\d+)$/', $defaultResolution, $matches)) {
+        global $defRes;
+        if (preg_match('/^(\d+)x(\d+)$/', $defRes, $matches)) {
             $targetWidth = intval($matches[1]);
             $targetHeight = intval($matches[2]);
         } else {
