@@ -69,6 +69,21 @@ Example:
 GET /index.php?url=https://example.com/image.jpg&bits=2&dth=fs&fmt=png
 ```
 
+### Using curl
+
+You can also use curl to process images from the command line:
+
+```bash
+# Process an image from a URL
+curl "http://localhost/index.php?url=https://example.com/image.jpg&bits=2&dth=fs&fmt=png" -o output.png
+
+# Upload a local image file
+curl -F "image=@local_image.jpg" -F "bits=3" -F "dth=ak" -F "fmt=png" http://localhost/index.php -o output.png
+
+# Get a random image from a collection
+curl "http://localhost/index.php?col=apod&bits=1&dth=by&fmt=gif" -o output.gif
+```
+
 ## License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
