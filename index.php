@@ -2,9 +2,11 @@
 // Fetch and process art images from specified collection
 // Then crop and scale it to 296x128 format and return in specified format
 
-// Define available collections globally
+// Define available collections and formats globally
 global $collections;
 $collections = ['apod', 'tic', 'jux', 'veri'];
+global $allowedFormats;
+$allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
 
 // Check if this is a POST request with image data
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -41,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $levels = pow(2, $bits);
         
     // Get allowed formats
-    $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
+    global $allowedFormats;
     if (!in_array($fmt, $allowedFormats)) {
         $fmt = 'png'; // Default to png if invalid format
     }
