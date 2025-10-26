@@ -1227,13 +1227,13 @@ try {
         
         <div>
             <h2>Image Details</h2>
-            <ul>
-                <li>Format: <?php echo strtoupper($fmt); ?></li>
-                <li>Resolution: <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?></li>
-                <li>Grayscale Bits: <?php echo $bits; ?></li>
-                <li>Dithering Method: <?php echo $dth; ?></li>
-                <li>Reduce Bleeding: <?php echo $rb ? 'Yes' : 'No'; ?></li>
-            </ul>
+            <p>
+                Format: <?php echo strtoupper($fmt); ?> |
+                Resolution: <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?> |
+                Grayscale Bits: <?php echo $bits; ?> |
+                Dithering Method: <?php echo $dth; ?> |
+                Reduce Bleeding: <?php echo $rb ? 'Yes' : 'No'; ?>
+            </p>
         </div>
         
         <div>
