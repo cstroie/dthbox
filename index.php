@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
     $bits = isset($_POST['bits']) ? intval($_POST['bits']) : 1;
     $res = isset($_POST['res']) ? $_POST['res'] : '296x128';
-    $ditherMethod = isset($_POST['dth']) ? $_POST['dth'] : 'floyd-steinberg';
+    $dth = isset($_POST['dth']) ? $_POST['dth'] : 'fs';
     $reduceBleeding = isset($_POST['reduceBleeding']) ? (bool)$_POST['reduceBleeding'] : true;
         
     // Validate and parse resolution
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
         
     // Get dithering parameters
-    $ditherMethod = isset($_GET['dth']) ? $_GET['dth'] : 'floyd-steinberg';
+    $dth = isset($_GET['dth']) ? $_GET['dth'] : 'fs';
     $reduceBleeding = isset($_GET['reduceBleeding']) ? (bool)$_GET['reduceBleeding'] : true;
         
     // If no 'col' or 'url' are provided, show the upload form
@@ -160,7 +160,7 @@ function showUploadForm() {
                         <label for="ditherMethod_url">Dithering Method:</label>
                         <select id="ditherMethod_url" name="dth">
                             <option value="none">None</option>
-                            <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
+                            <option value="fs" selected>Floyd-Steinberg</option>
                             <option value="atkinson">Atkinson</option>
                             <option value="jarvis">Jarvis, Judice & Ninke</option>
                             <option value="stucki">Stucki</option>
@@ -206,7 +206,7 @@ function showUploadForm() {
                         <label for="ditherMethod_file">Dithering Method:</label>
                         <select id="ditherMethod_file" name="dth">
                             <option value="none">None</option>
-                            <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
+                            <option value="fs" selected>Floyd-Steinberg</option>
                             <option value="atkinson">Atkinson</option>
                             <option value="jarvis">Jarvis, Judice & Ninke</option>
                             <option value="stucki">Stucki</option>
@@ -258,7 +258,7 @@ function showUploadForm() {
                         <label for="ditherMethod_col">Dithering Method:</label>
                         <select id="ditherMethod_col" name="dth">
                             <option value="none">None</option>
-                            <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
+                            <option value="fs" selected>Floyd-Steinberg</option>
                             <option value="atkinson">Atkinson</option>
                             <option value="jarvis">Jarvis, Judice & Ninke</option>
                             <option value="stucki">Stucki</option>
@@ -541,7 +541,7 @@ function fetchRandomImage($collection) {
     }
 }
 
-function processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherMethod, $reduceBleeding, $useMaxSize = false) {
+function processImage($imageData, $levels, $targetWidth, $targetHeight, $dth, $reduceBleeding, $useMaxSize = false) {
     // Create image from data
     $srcImage = imagecreatefromstring($imageData);
     
@@ -609,34 +609,34 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherM
     imagefilter($dstImage, IMG_FILTER_GRAYSCALE);
     
     // Apply dithering based on selected method for low levels, otherwise simple quantization
-    if ($levels < 256 && $ditherMethod !== 'none') {
-        switch ($ditherMethod) {
-            case 'floyd-steinberg':
-                floydSteinbergDither($dstImage, $levels, $reduceBleeding);
+    if ($levels < 256 && $dth !== 'none') {
+        switch ($dth) {
+            case 'fs':
+                dthFloydSteinberg($dstImage, $levels, $reduceBleeding);
                 break;
             case 'atkinson':
-                atkinsonDither($dstImage, $levels, $reduceBleeding);
+                dthAtkinson($dstImage, $levels, $reduceBleeding);
                 break;
             case 'jarvis':
-                jarvisDither($dstImage, $levels, $reduceBleeding);
+                dthJarvis($dstImage, $levels, $reduceBleeding);
                 break;
             case 'stucki':
-                stuckiDither($dstImage, $levels, $reduceBleeding);
+                dthStucki($dstImage, $levels, $reduceBleeding);
                 break;
             case 'burkes':
-                burkesDither($dstImage, $levels, $reduceBleeding);
+                dthBurkes($dstImage, $levels, $reduceBleeding);
                 break;
             case 'bayer2x2':
                 bayer2x2Dither($dstImage, $levels);
                 break;
             default:
                 // Simple quantization for unknown methods
-                simpleQuantization($dstImage, $levels);
+                dthNone($dstImage, $levels);
                 break;
         }
     } else if ($levels < 256) {
         // Simple quantization when dithering is disabled
-        simpleQuantization($dstImage, $levels);
+        dthNone($dstImage, $levels);
     }
     
     // Clean up source image
@@ -645,7 +645,7 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherM
     return $dstImage;
 }
 
-function floydSteinbergDither($image, $levels, $reduceBleeding = true) {
+function dthFloydSteinberg($image, $levels, $reduceBleeding = true) {
     $width = imagesx($image);
     $height = imagesy($image);
     
@@ -725,7 +725,7 @@ function floydSteinbergDither($image, $levels, $reduceBleeding = true) {
     }
 }
 
-function atkinsonDither($image, $levels, $reduceBleeding = true) {
+function dthAtkinson($image, $levels, $reduceBleeding = true) {
     $width = imagesx($image);
     $height = imagesy($image);
     
@@ -787,7 +787,7 @@ function atkinsonDither($image, $levels, $reduceBleeding = true) {
     }
 }
 
-function jarvisDither($image, $levels, $reduceBleeding = true) {
+function dthJarvis($image, $levels, $reduceBleeding = true) {
     $width = imagesx($image);
     $height = imagesy($image);
     
@@ -896,7 +896,7 @@ function jarvisDither($image, $levels, $reduceBleeding = true) {
     }
 }
 
-function stuckiDither($image, $levels, $reduceBleeding = true) {
+function dthStucki($image, $levels, $reduceBleeding = true) {
     $width = imagesx($image);
     $height = imagesy($image);
     
@@ -1042,7 +1042,7 @@ function bayer2x2Dither($image, $levels) {
     }
 }
 
-function burkesDither($image, $levels, $reduceBleeding = true) {
+function dthBurkes($image, $levels, $reduceBleeding = true) {
     $width = imagesx($image);
     $height = imagesy($image);
     
@@ -1119,7 +1119,7 @@ function burkesDither($image, $levels, $reduceBleeding = true) {
     }
 }
 
-function simpleQuantization($image, $levels) {
+function dthNone($image, $levels) {
     $width = imagesx($image);
     $height = imagesy($image);
     
@@ -1182,7 +1182,7 @@ try {
     }
     
     // Process the image
-    $processedImage = processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherMethod, $reduceBleeding);
+    $processedImage = processImage($imageData, $levels, $targetWidth, $targetHeight, $dth, $reduceBleeding);
     
     // Save the processed image to a temporary file
     $tempFile = tempnam(sys_get_temp_dir(), 'ditherbox_');
@@ -1267,7 +1267,7 @@ try {
                     <li>Format: <?php echo strtoupper($fmt); ?></li>
                     <li>Resolution: <?php echo $targetWidth; ?>x<?php echo $targetHeight; ?></li>
                     <li>Grayscale Bits: <?php echo $bits; ?></li>
-                    <li>Dithering Method: <?php echo $ditherMethod; ?></li>
+                    <li>Dithering Method: <?php echo $dth; ?></li>
                     <li>Reduce Bleeding: <?php echo $reduceBleeding ? 'Yes' : 'No'; ?></li>
                 </ul>
             </div>
