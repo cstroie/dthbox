@@ -77,20 +77,14 @@ You can also use curl to process images from the command line:
 # Process an image from a URL and get the result directly
 curl "http://localhost/index.php?url=https://example.com/image.jpg&bits=2&dth=fs&fmt=png" -o output.png
 
-# Process an image from a URL and display the result in a web page with the form
-curl -X POST -d "url=https://example.com/image.jpg&bits=2&dth=fs&fmt=png&ui=1" http://localhost/index.php -o output.html
-
 # Upload a local image file and get the result directly
 curl -F "image=@local_image.jpg" -F "bits=3" -F "dth=ak" -F "fmt=png" http://localhost/index.php -o output.png
 
-# Upload a local image file and display the result in a web page with the form
-curl -F "image=@local_image.jpg" -F "bits=3" -F "dth=ak" -F "fmt=png" -F "ui=1" http://localhost/index.php -o output.html
-
 # Get a random image from a collection and get the result directly
-curl "http://localhost/index.php?col=apod&bits=1&dth=by&fmt=gif" -o output.gif
+curl "http://localhost/index.php?col=apod&bits=1&dth=jv&fmt=gif" -o output.gif
 
-# Get a random image from a collection and display the result in a web page with the form
-curl -X POST -d "col=apod&bits=1&dth=by&fmt=gif&ui=1" http://localhost/index.php -o output.html
+# Get a random image from a collection for an epaper display
+curl "http://localhost/index.php?col=any&bits=1&dth=jv&fmt=pbm&res=296x128" -o output.pbm
 ```
 
 ## License

@@ -1017,13 +1017,13 @@ function displayForm() {
         <div id="url_field">
             <label for="url_input">Image URL:</label>
             <input type="url" id="url_input" name="url" placeholder="https://example.com/image.jpg">
-            <input type="hidden" name="show_form" value="1">
+            <input type="hidden" name="ui" value="1">
         </div>
         
         <div id="file_field" style="display:none">
             <label for="image">Select image file:</label>
             <input type="file" id="image" name="image" accept="image/*">
-            <input type="hidden" name="show_form" value="1">
+            <input type="hidden" name="ui" value="1">
         </div>
         
         <div id="collection_field" style="display:none">
@@ -1037,7 +1037,7 @@ function displayForm() {
                 ?>
                 <option value="any">Random collection</option>
             </select>
-            <input type="hidden" name="show_form" value="1">
+            <input type="hidden" name="ui" value="1">
         </div>
         
         <div>
@@ -1156,7 +1156,7 @@ if (isset($_GET['col']) || isset($_GET['url']) || $_SERVER['REQUEST_METHOD'] ===
         $processedImage = processImage($imageData, $levels, $tgtWidth, $tgtHeight, $dth, $rb);
         
         // Check if we should display the form or just return the image
-        $showForm = isset($_POST['show_form']) && $_POST['show_form'] == '1';
+        $showForm = isset($_POST['ui']) && $_POST['ui'] == '1';
         
         if ($showForm) {
             // Convert image to base64 for embedding
