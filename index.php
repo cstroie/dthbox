@@ -259,20 +259,19 @@ function showUploadForm() {
     <?php
 }
 
-function fetchRandomApodImage() {
+function fetchImagesFromRss($rssUrl, $siteName) {
     // Fetch the RSS feed
-    $rssUrl = 'https://apod.com/feed.rss';
     $rssContent = file_get_contents($rssUrl);
     
     if ($rssContent === false) {
-        throw new Exception('Failed to fetch RSS feed');
+        throw new Exception("Failed to fetch $siteName RSS feed");
     }
     
     // Parse the RSS feed
     $rss = simplexml_load_string($rssContent);
     
     if ($rss === false) {
-        throw new Exception('Failed to parse RSS feed');
+        throw new Exception("Failed to parse $siteName RSS feed");
     }
     
     // Extract image URLs from enclosures
@@ -299,8 +298,14 @@ function fetchRandomApodImage() {
     }
     
     if (empty($imageUrls)) {
-        throw new Exception('No JPG images found in RSS feed');
+        throw new Exception("No JPG images found in $siteName RSS feed");
     }
+    
+    return $imageUrls;
+}
+
+function fetchRandomApodImage() {
+    $imageUrls = fetchImagesFromRss('https://apod.com/feed.rss', 'APoD');
     
     // Select a random image
     $randomImageUrl = $imageUrls[array_rand($imageUrls)];
@@ -316,47 +321,7 @@ function fetchRandomApodImage() {
 }
 
 function fetchRandomTicImage() {
-    // Fetch the RSS feed
-    $rssUrl = 'https://www.thisiscolossal.com/feed/';
-    $rssContent = file_get_contents($rssUrl);
-    
-    if ($rssContent === false) {
-        throw new Exception('Failed to fetch TIC RSS feed');
-    }
-    
-    // Parse the RSS feed
-    $rss = simplexml_load_string($rssContent);
-    
-    if ($rss === false) {
-        throw new Exception('Failed to parse TIC RSS feed');
-    }
-    
-    // Extract image URLs from enclosures
-    $imageUrls = [];
-    foreach ($rss->channel->item as $item) {
-        foreach ($item->enclosure as $enclosure) {
-            $url = (string)$enclosure['url'];
-            // Only include JPG images
-            if (preg_match('/\.(jpg|jpeg)$/i', $url)) {
-                $imageUrls[] = $url;
-            }
-        }
-    }
-    
-    // If no JPG images found, try to extract from description
-    if (empty($imageUrls)) {
-        foreach ($rss->channel->item as $item) {
-            $description = (string)$item->description;
-            // Look for img tags in description
-            if (preg_match_all('/<img[^>]+src=["\']([^"\']+\.(jpg|jpeg))["\'][^>]*>/i', $description, $matches)) {
-                $imageUrls = array_merge($imageUrls, $matches[1]);
-            }
-        }
-    }
-    
-    if (empty($imageUrls)) {
-        throw new Exception('No JPG images found in TIC RSS feed');
-    }
+    $imageUrls = fetchImagesFromRss('https://www.thisiscolossal.com/feed/', 'TIC');
     
     // Select a random image
     $randomImageUrl = $imageUrls[array_rand($imageUrls)];
@@ -372,47 +337,7 @@ function fetchRandomTicImage() {
 }
 
 function fetchRandomJuxImage() {
-    // Fetch the RSS feed
-    $rssUrl = 'https://www.juxtapoz.com/news/?format=feed&type=rss';
-    $rssContent = file_get_contents($rssUrl);
-    
-    if ($rssContent === false) {
-        throw new Exception('Failed to fetch JUX RSS feed');
-    }
-    
-    // Parse the RSS feed
-    $rss = simplexml_load_string($rssContent);
-    
-    if ($rss === false) {
-        throw new Exception('Failed to parse JUX RSS feed');
-    }
-    
-    // Extract image URLs from enclosures
-    $imageUrls = [];
-    foreach ($rss->channel->item as $item) {
-        foreach ($item->enclosure as $enclosure) {
-            $url = (string)$enclosure['url'];
-            // Only include JPG images
-            if (preg_match('/\.(jpg|jpeg)$/i', $url)) {
-                $imageUrls[] = $url;
-            }
-        }
-    }
-    
-    // If no JPG images found, try to extract from description
-    if (empty($imageUrls)) {
-        foreach ($rss->channel->item as $item) {
-            $description = (string)$item->description;
-            // Look for img tags in description
-            if (preg_match_all('/<img[^>]+src=["\']([^"\']+\.(jpg|jpeg))["\'][^>]*>/i', $description, $matches)) {
-                $imageUrls = array_merge($imageUrls, $matches[1]);
-            }
-        }
-    }
-    
-    if (empty($imageUrls)) {
-        throw new Exception('No JPG images found in JUX RSS feed');
-    }
+    $imageUrls = fetchImagesFromRss('https://www.juxtapoz.com/news/?format=feed&type=rss', 'JUX');
     
     // Select a random image
     $randomImageUrl = $imageUrls[array_rand($imageUrls)];
@@ -428,47 +353,7 @@ function fetchRandomJuxImage() {
 }
 
 function fetchRandomVeriImage() {
-    // Fetch the RSS feed
-    $rssUrl = 'https://veriartem.com/feed/';
-    $rssContent = file_get_contents($rssUrl);
-    
-    if ($rssContent === false) {
-        throw new Exception('Failed to fetch VERI RSS feed');
-    }
-    
-    // Parse the RSS feed
-    $rss = simplexml_load_string($rssContent);
-    
-    if ($rss === false) {
-        throw new Exception('Failed to parse VERI RSS feed');
-    }
-    
-    // Extract image URLs from enclosures
-    $imageUrls = [];
-    foreach ($rss->channel->item as $item) {
-        foreach ($item->enclosure as $enclosure) {
-            $url = (string)$enclosure['url'];
-            // Only include JPG images
-            if (preg_match('/\.(jpg|jpeg)$/i', $url)) {
-                $imageUrls[] = $url;
-            }
-        }
-    }
-    
-    // If no JPG images found, try to extract from description
-    if (empty($imageUrls)) {
-        foreach ($rss->channel->item as $item) {
-            $description = (string)$item->description;
-            // Look for img tags in description
-            if (preg_match_all('/<img[^>]+src=["\']([^"\']+\.(jpg|jpeg))["\'][^>]*>/i', $description, $matches)) {
-                $imageUrls = array_merge($imageUrls, $matches[1]);
-            }
-        }
-    }
-    
-    if (empty($imageUrls)) {
-        throw new Exception('No JPG images found in VERI RSS feed');
-    }
+    $imageUrls = fetchImagesFromRss('https://veriartem.com/feed/', 'VERI');
     
     // Select a random image
     $randomImageUrl = $imageUrls[array_rand($imageUrls)];
