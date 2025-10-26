@@ -267,27 +267,6 @@ function fetchRandomImage($collectionId) {
 }
 
 /**
- * Fetch a random image from the specified collection
- * 
- * @param string $collection The collection to fetch from ('apod', 'tic', 'jux', 'veri', or 'any')
- * @return string Image data as binary string
- * @throws Exception If image cannot be fetched or processed
- */
-function fetchRandomImage($collection) {
-    switch ($collection) {
-        case 'tic':
-            return fetchRandomTicImage();
-        case 'jux':
-            return fetchRandomJuxImage();
-        case 'veri':
-            return fetchRandomVeriImage();
-        case 'apod':
-        default:
-            return fetchRandomApodImage();
-    }
-}
-
-/**
  * Process an image with resizing, cropping, and dithering
  * This function takes raw image data and applies the specified processing:
  * 1. Creates an image resource from the data
