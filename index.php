@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Get format from query parameter, default to png
     $fmt = isset($_GET['fmt']) ? strtolower($_GET['fmt']) : 'png';
-    $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
+    global $allowedFormats;
     if (!in_array($fmt, $allowedFormats)) {
         $fmt = 'png'; // Default to png if invalid format
     }
