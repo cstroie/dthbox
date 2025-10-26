@@ -999,7 +999,7 @@ function displayForm() {
             <select id="image_source" name="image_source" onchange="toggleSourceFields()">
                 <option value="url">Via URL</option>
                 <option value="file">Upload File</option>
-                <option value="collection">Random Collection</option>
+                <option value="collection">Collection</option>
             </select>
         </div>
         
