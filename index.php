@@ -1017,11 +1017,13 @@ function displayForm() {
         <div id="url_field">
             <label for="url_input">Image URL:</label>
             <input type="url" id="url_input" name="url" placeholder="https://example.com/image.jpg">
+            <input type="hidden" name="show_form" value="1">
         </div>
         
         <div id="file_field" style="display:none">
             <label for="image">Select image file:</label>
             <input type="file" id="image" name="image" accept="image/*">
+            <input type="hidden" name="show_form" value="1">
         </div>
         
         <div id="collection_field" style="display:none">
@@ -1035,6 +1037,7 @@ function displayForm() {
                 ?>
                 <option value="any">Random collection</option>
             </select>
+            <input type="hidden" name="show_form" value="1">
         </div>
         
         <div>
@@ -1152,71 +1155,122 @@ if (isset($_GET['col']) || isset($_GET['url']) || $_SERVER['REQUEST_METHOD'] ===
         // Process the image
         $processedImage = processImage($imageData, $levels, $tgtWidth, $tgtHeight, $dth, $rb);
         
-        // Set appropriate content type header
-        switch ($fmt) {
-            case 'jpg':
-            case 'jpeg':
-                header('Content-Type: image/jpeg');
-                imagejpeg($processedImage, null, 90);
-                break;
-            case 'gif':
-                header('Content-Type: image/gif');
-                imagegif($processedImage);
-                break;
-            case 'ppm':
-                header('Content-Type: image/x-portable-pixmap');
-                // Output PPM header
-                echo "P6\n{$tgtWidth} {$tgtHeight}\n255\n";
-                // Output pixel data
-                for ($y = 0; $y < $tgtHeight; $y++) {
-                    for ($x = 0; $x < $tgtWidth; $x++) {
-                        $rgb = imagecolorat($processedImage, $x, $y);
-                        $r = ($rgb >> 16) & 0xFF;
-                        $g = ($rgb >> 8) & 0xFF;
-                        $b = $rgb & 0xFF;
-                        echo chr($r) . chr($g) . chr($b);
-                    }
-                }
-                break;
-            case 'pbm':
-                header('Content-Type: image/x-portable-bitmap');
-                // Output PBM header
-                echo "P4\n{$tgtWidth} {$tgtHeight}\n";
-                // Output pixel data (1 bit per pixel)
-                for ($y = 0; $y < $tgtHeight; $y++) {
-                    $byte = 0;
-                    $bitCount = 0;
-                    for ($x = 0; $x < $tgtWidth; $x++) {
-                        $rgb = imagecolorat($processedImage, $x, $y);
-                        $gray = ($rgb >> 16) & 0xFF;
-                        // Set bit if pixel is white (above threshold)
-                        if ($gray > 127) {
-                            $byte |= (1 << (7 - $bitCount));
-                        }
-                        $bitCount++;
-                        // Output byte when we have 8 bits
-                        if ($bitCount == 8) {
-                            echo chr($byte);
-                            $byte = 0;
-                            $bitCount = 0;
-                        }
-                    }
-                    // Output remaining bits in the last byte
-                    if ($bitCount > 0) {
-                        echo chr($byte);
-                    }
-                }
-                break;
-            case 'png':
-            default:
-                header('Content-Type: image/png');
-                imagepng($processedImage);
-                break;
-        }
+        // Check if we should display the form or just return the image
+        $showForm = isset($_POST['show_form']) && $_POST['show_form'] == '1';
         
-        // Clean up
-        imagedestroy($processedImage);
-        exit;
+        if ($showForm) {
+            // Convert image to base64 for embedding
+            // Save the processed image to a temporary file
+            $tempFile = tempnam(sys_get_temp_dir(), 'ditherbox_');
+            switch ($fmt) {
+                case 'jpg':
+                case 'jpeg':
+                    imagejpeg($processedImage, $tempFile, 90);
+                    break;
+                case 'gif':
+                    imagegif($processedImage, $tempFile);
+                    break;
+                case 'ppm':
+                    // For PPM, we'll convert to PNG for web display
+                    imagepng($processedImage, $tempFile);
+                    break;
+                case 'pbm':
+                    // For PBM, we'll convert to PNG for web display
+                    imagepng($processedImage, $tempFile);
+                    break;
+                case 'png':
+                default:
+                    imagepng($processedImage, $tempFile);
+                    break;
+            }
+            
+            // Get the image data for embedding
+            $imageData = file_get_contents($tempFile);
+            unlink($tempFile);
+            
+            // Get the MIME type for the image
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_buffer($finfo, $imageData);
+            finfo_close($finfo);
+            
+            // Convert image data to base64 for embedding
+            $base64Image = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+            
+            // Clean up
+            imagedestroy($processedImage);
+            
+            // Display the result with form
+            displayWebPage("DitherBox - Result", function() use ($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb) {
+                displayResult($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb);
+                displayForm();
+            });
+        } else {
+            // Set appropriate content type header and output image directly
+            switch ($fmt) {
+                case 'jpg':
+                case 'jpeg':
+                    header('Content-Type: image/jpeg');
+                    imagejpeg($processedImage, null, 90);
+                    break;
+                case 'gif':
+                    header('Content-Type: image/gif');
+                    imagegif($processedImage);
+                    break;
+                case 'ppm':
+                    header('Content-Type: image/x-portable-pixmap');
+                    // Output PPM header
+                    echo "P6\n{$tgtWidth} {$tgtHeight}\n255\n";
+                    // Output pixel data
+                    for ($y = 0; $y < $tgtHeight; $y++) {
+                        for ($x = 0; $x < $tgtWidth; $x++) {
+                            $rgb = imagecolorat($processedImage, $x, $y);
+                            $r = ($rgb >> 16) & 0xFF;
+                            $g = ($rgb >> 8) & 0xFF;
+                            $b = $rgb & 0xFF;
+                            echo chr($r) . chr($g) . chr($b);
+                        }
+                    }
+                    break;
+                case 'pbm':
+                    header('Content-Type: image/x-portable-bitmap');
+                    // Output PBM header
+                    echo "P4\n{$tgtWidth} {$tgtHeight}\n";
+                    // Output pixel data (1 bit per pixel)
+                    for ($y = 0; $y < $tgtHeight; $y++) {
+                        $byte = 0;
+                        $bitCount = 0;
+                        for ($x = 0; $x < $tgtWidth; $x++) {
+                            $rgb = imagecolorat($processedImage, $x, $y);
+                            $gray = ($rgb >> 16) & 0xFF;
+                            // Set bit if pixel is white (above threshold)
+                            if ($gray > 127) {
+                                $byte |= (1 << (7 - $bitCount));
+                            }
+                            $bitCount++;
+                            // Output byte when we have 8 bits
+                            if ($bitCount == 8) {
+                                echo chr($byte);
+                                $byte = 0;
+                                $bitCount = 0;
+                            }
+                        }
+                        // Output remaining bits in the last byte
+                        if ($bitCount > 0) {
+                            echo chr($byte);
+                        }
+                    }
+                    break;
+                case 'png':
+                default:
+                    header('Content-Type: image/png');
+                    imagepng($processedImage);
+                    break;
+            }
+            
+            // Clean up
+            imagedestroy($processedImage);
+            exit;
+        }
         
     } catch (Exception $e) {
         // For GET requests with parameters, output error directly
