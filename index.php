@@ -25,7 +25,28 @@
 
 // Define available collections, formats, and default resolution globally
 global $collections;
-$collections = ['apod', 'tic', 'jux', 'veri'];
+$collections = [
+    'apod' => [
+        'id' => 'apod',
+        'name' => 'Astronomy Picture of the Day',
+        'url' => 'https://apod.com/feed.rss'
+    ],
+    'tic' => [
+        'id' => 'tic',
+        'name' => 'This Is Colossal',
+        'url' => 'https://www.thisiscolossal.com/feed/'
+    ],
+    'jux' => [
+        'id' => 'jux',
+        'name' => 'Juxtapoz',
+        'url' => 'https://www.juxtapoz.com/news/?format=feed&type=rss'
+    ],
+    'veri' => [
+        'id' => 'veri',
+        'name' => 'Veri Artem',
+        'url' => 'https://veriartem.com/feed/'
+    ]
+];
 global $allowedFormats;
 $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
 global $defaultResolution;
@@ -103,8 +124,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // If collection is 'any' or not specified, choose randomly from available collections
     // But only if no URL is provided
-    if (!$imageUrl && ($col === 'any' || !in_array($col, $collections))) {
-        $col = $collections[array_rand($collections)];
+    if (!$imageUrl && ($col === 'any' || !isset($collections[$col]))) {
+        $colKeys = array_keys($collections);
+        $col = $colKeys[array_rand($colKeys)];
     }
 
     // Get format from query parameter, default to png
@@ -215,35 +237,21 @@ function fetchImagesFromRss($rssUrl, $siteName) {
 }
 
 /**
- * Fetch a random image from the Astronomy Picture of the Day (APOD) RSS feed
+ * Fetch a random image from a collection
  * 
+ * @param string $collectionId The collection ID to fetch from
  * @return string Image data as binary string
  * @throws Exception If image cannot be fetched or processed
  */
-function fetchRandomApodImage() {
-    $imageUrls = fetchImagesFromRss('https://apod.com/feed.rss', 'APoD');
+function fetchRandomImage($collectionId) {
+    global $collections;
     
-    // Select a random image
-    $randomImageUrl = $imageUrls[array_rand($imageUrls)];
-    
-    // Fetch the image
-    $imageData = file_get_contents($randomImageUrl);
-    
-    if ($imageData === false) {
-        throw new Exception('Failed to fetch image');
+    if (!isset($collections[$collectionId])) {
+        throw new Exception("Invalid collection: $collectionId");
     }
     
-    return $imageData;
-}
-
-/**
- * Fetch a random image from the This Is Colossal RSS feed
- * 
- * @return string Image data as binary string
- * @throws Exception If image cannot be fetched or processed
- */
-function fetchRandomTicImage() {
-    $imageUrls = fetchImagesFromRss('https://www.thisiscolossal.com/feed/', 'TIC');
+    $collection = $collections[$collectionId];
+    $imageUrls = fetchImagesFromRss($collection['url'], $collection['name']);
     
     // Select a random image
     $randomImageUrl = $imageUrls[array_rand($imageUrls)];
@@ -252,51 +260,7 @@ function fetchRandomTicImage() {
     $imageData = file_get_contents($randomImageUrl);
     
     if ($imageData === false) {
-        throw new Exception('Failed to fetch image from TIC');
-    }
-    
-    return $imageData;
-}
-
-/**
- * Fetch a random image from the Juxtapoz RSS feed
- * 
- * @return string Image data as binary string
- * @throws Exception If image cannot be fetched or processed
- */
-function fetchRandomJuxImage() {
-    $imageUrls = fetchImagesFromRss('https://www.juxtapoz.com/news/?format=feed&type=rss', 'JUX');
-    
-    // Select a random image
-    $randomImageUrl = $imageUrls[array_rand($imageUrls)];
-    
-    // Fetch the image
-    $imageData = file_get_contents($randomImageUrl);
-    
-    if ($imageData === false) {
-        throw new Exception('Failed to fetch image from JUX');
-    }
-    
-    return $imageData;
-}
-
-/**
- * Fetch a random image from the Veri Artem RSS feed
- * 
- * @return string Image data as binary string
- * @throws Exception If image cannot be fetched or processed
- */
-function fetchRandomVeriImage() {
-    $imageUrls = fetchImagesFromRss('https://veriartem.com/feed/', 'VERI');
-    
-    // Select a random image
-    $randomImageUrl = $imageUrls[array_rand($imageUrls)];
-    
-    // Fetch the image
-    $imageData = file_get_contents($randomImageUrl);
-    
-    if ($imageData === false) {
-        throw new Exception('Failed to fetch image from VERI');
+        throw new Exception('Failed to fetch image from ' . $collection['name']);
     }
     
     return $imageData;
@@ -1073,10 +1037,12 @@ function displayForm() {
         <div id="collection_field" style="display:none">
             <label for="col">Collection:</label>
             <select id="col" name="col">
-                <option value="apod">Astronomy Picture of the Day</option>
-                <option value="tic">This Is Colossal</option>
-                <option value="jux">Juxtapoz</option>
-                <option value="veri">Veri Artem</option>
+                <?php
+                global $collections;
+                foreach ($collections as $id => $collection) {
+                    echo '<option value="' . $id . '">' . $collection['name'] . '</option>';
+                }
+                ?>
                 <option value="any">Random Collection</option>
             </select>
         </div>
