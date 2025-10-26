@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $reduceBleeding = isset($_GET['reduceBleeding']) ? (bool)$_GET['reduceBleeding'] : true;
         
     // If no 'col' or 'url' are provided, show the upload form
-    if (!isset($_GET['col']) && !isset($_GET['url'])) {
+    if (!isset($_GET['col']) && !isset($_GET['url']) && $_SERVER['REQUEST_METHOD'] !== 'POST') {
         showUploadForm();
         exit;
     }
@@ -1110,6 +1110,9 @@ function burkesDither($image, $levels, $reduceBleeding = true) {
     }
 }
 
+// Add this before the try block to capture output
+ob_start();
+
 try {
     // Check if URL parameter is provided
     if ($imageUrl) {
@@ -1149,75 +1152,145 @@ try {
     // Process the image
     $processedImage = processImage($imageData, $levels, $targetWidth, $targetHeight, $ditherMethod, $reduceBleeding);
     
-    // Output in specified format
+    // Save the processed image to a temporary file
+    $tempFile = tempnam(sys_get_temp_dir(), 'ditherbox_');
     switch ($fmt) {
         case 'jpg':
         case 'jpeg':
-            header('Content-Type: image/jpeg');
-            imagejpeg($processedImage, null, 90);
+            imagejpeg($processedImage, $tempFile, 90);
             break;
         case 'gif':
-            header('Content-Type: image/gif');
-            imagegif($processedImage);
+            imagegif($processedImage, $tempFile);
             break;
         case 'ppm':
-            header('Content-Type: image/x-portable-pixmap');
-            // PPM format: P6 width height max_color_value binary_data
-            echo "P6\n{$targetWidth} {$targetHeight}\n255\n";
-            for ($y = 0; $y < $targetHeight; $y++) {
-                for ($x = 0; $x < $targetWidth; $x++) {
-                    $rgb = imagecolorat($processedImage, $x, $y);
-                    $r = ($rgb >> 16) & 0xFF;
-                    $g = ($rgb >> 8) & 0xFF;
-                    $b = $rgb & 0xFF;
-                    echo chr($r) . chr($g) . chr($b);
-                }
-                echo "\n";
-            }
+            // For PPM, we'll convert to PNG for web display
+            imagepng($processedImage, $tempFile);
             break;
         case 'pbm':
-            header('Content-Type: image/x-portable-bitmap');
-            // PBM format: P4 width height binary_data
-            echo "P4\n";
-            // Add comment with collection name
-            echo "# " . strtoupper($col) . "\n";
-            echo "{$targetWidth} {$targetHeight}\n";
-            for ($y = 0; $y < $targetHeight; $y++) {
-                $byte = 0;
-                $bitCount = 0;
-                for ($x = 0; $x < $targetWidth; $x++) {
-                    $rgb = imagecolorat($processedImage, $x, $y);
-                    $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
-                    // Threshold at 128 for binary conversion
-                    $bit = ($gray < 128) ? 1 : 0;
-                    $byte = ($byte << 1) | $bit;
-                    $bitCount++;
-                    
-                    if ($bitCount == 8) {
-                        echo chr($byte);
-                        $byte = 0;
-                        $bitCount = 0;
-                    }
-                }
-                // Handle remaining bits in the row
-                if ($bitCount > 0) {
-                    $byte <<= (8 - $bitCount);
-                    echo chr($byte);
-                }
-            }
+            // For PBM, we'll convert to PNG for web display
+            imagepng($processedImage, $tempFile);
             break;
         case 'png':
         default:
-            header('Content-Type: image/png');
-            imagepng($processedImage);
+            imagepng($processedImage, $tempFile);
             break;
     }
     
     // Clean up
     imagedestroy($processedImage);
+    
+    // Get the image data for embedding
+    $imageData = file_get_contents($tempFile);
+    unlink($tempFile);
+    
+    // Get the MIME type for the image
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_buffer($finfo, $imageData);
+    finfo_close($finfo);
+    
+    // Convert image data to base64 for embedding
+    $base64Image = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+    
+    // Get the form output
+    $formOutput = ob_get_clean();
+    
+    // Display the result page with embedded image
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>DitherBox - Result</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+        <style>
+            .container {
+                max-width: 800px;
+                margin: 2rem auto;
+                padding: 0 1rem;
+            }
+            .result-image {
+                width: 100%;
+                max-width: <?php echo $targetWidth; ?>px;
+                height: auto;
+                image-rendering: pixelated;
+            }
+            .note {
+                font-size: 0.9rem;
+                color: var(--pico-muted-color);
+            }
+        </style>
+    </head>
+    <body>
+        <main class="container">
+            <h1>DitherBox Result</h1>
+            
+            <div>
+                <img src="<?php echo $base64Image; ?>" alt="Processed Image" class="result-image">
+            </div>
+            
+            <div>
+                <h2>Image Details</h2>
+                <ul>
+                    <li>Format: <?php echo strtoupper($fmt); ?></li>
+                    <li>Resolution: <?php echo $targetWidth; ?>x<?php echo $targetHeight; ?></li>
+                    <li>Grayscale Bits: <?php echo $bits; ?></li>
+                    <li>Dithering Method: <?php echo $ditherMethod; ?></li>
+                    <li>Reduce Bleeding: <?php echo $reduceBleeding ? 'Yes' : 'No'; ?></li>
+                </ul>
+            </div>
+            
+            <div>
+                <h2>Process Another Image</h2>
+                <?php echo $formOutput; ?>
+            </div>
+        </main>
+    </body>
+    </html>
+    <?php
 } catch (Exception $e) {
+    // Get the form output
+    $formOutput = ob_get_clean();
+    
     // Handle errors
-    http_response_code(500);
-    echo "Error: " . $e->getMessage();
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>DitherBox - Error</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+        <style>
+            .container {
+                max-width: 800px;
+                margin: 2rem auto;
+                padding: 0 1rem;
+            }
+            .error {
+                color: red;
+                padding: 1rem;
+                border: 1px solid red;
+                border-radius: 4px;
+                background-color: #ffe6e6;
+            }
+        </style>
+    </head>
+    <body>
+        <main class="container">
+            <h1>DitherBox Error</h1>
+            
+            <div class="error">
+                Error: <?php echo $e->getMessage(); ?>
+            </div>
+            
+            <div>
+                <h2>Try Again</h2>
+                <?php echo $formOutput; ?>
+            </div>
+        </main>
+    </body>
+    </html>
+    <?php
 }
 ?>
