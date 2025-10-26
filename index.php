@@ -1045,236 +1045,223 @@ function dthNone($image, $levels) {
 
 /**
  * Display the main upload form for the DitherBox application
- * This function outputs the complete HTML form interface for users to:
- * - Select an image source (URL, file upload, or collection)
- * - Configure dithering parameters
- * - Set output format and resolution
- * 
- * @return void Outputs HTML directly to the browser
  */
 function displayForm() {
-    displayWebPage("DitherBox", function() {
-        ?>
-        <h1>DitherBox</h1>
-        
-        <form method="POST" action="" enctype="multipart/form-data">
-            <div>
-                <label for="image_source">Image Source:</label>
-                <select id="image_source" name="image_source" onchange="toggleSourceFields()">
-                    <option value="url">Via URL</option>
-                    <option value="file">Upload File</option>
-                    <option value="collection">Random Collection</option>
-                </select>
-            </div>
-            
-            <div id="url_field">
-                <label for="url_input">Image URL:</label>
-                <input type="url" id="url_input" name="url" placeholder="https://example.com/image.jpg">
-            </div>
-            
-            <div id="file_field" style="display:none">
-                <label for="image">Select Image File:</label>
-                <input type="file" id="image" name="image" accept="image/*">
-            </div>
-            
-            <div id="collection_field" style="display:none">
-                <label for="col">Collection:</label>
-                <select id="col" name="col">
-                    <option value="apod">Astronomy Picture of the Day</option>
-                    <option value="tic">This Is Colossal</option>
-                    <option value="jux">Juxtapoz</option>
-                    <option value="veri">Veri Artem</option>
-                    <option value="any">Random Collection</option>
-                </select>
-            </div>
-            
-            <div>
-                <label for="fmt">Output Format:</label>
-                <select id="fmt" name="fmt">
-                    <option value="png">PNG</option>
-                    <option value="jpg">JPG</option>
-                    <option value="ppm">PPM</option>
-                    <option value="pbm">PBM</option>
-                    <option value="gif">GIF</option>
-                </select>
-            </div>
-            
-            <div>
-                <label for="bits">Grayscale Bits: <span id="bits_value">1</span></label>
-                <input type="range" id="bits" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_value').textContent = this.value">
-            </div>
-            
-            <div>
-                <label for="ditherMethod">Dithering Method:</label>
-                <select id="ditherMethod" name="dth">
-                    <option value="none">None</option>
-                    <option value="fs" selected>Floyd-Steinberg</option>
-                    <option value="ak">Atkinson</option>
-                    <option value="jv">Jarvis, Judice & Ninke</option>
-                    <option value="sk">Stucki</option>
-                    <option value="bk">Burkes</option>
-                    <option value="by">Bayer 2x2</option>
-                </select>
-            </div>
-            
-            <div>
-                <label>
-                    <input type="checkbox" id="rb" name="rb" value="1" checked>
-                    Reduce Color Bleeding
-                </label>
-            </div>
-            
-            <div>
-                <label for="res">Resolution (WxH):</label>
-                <input type="text" id="res" name="res" value="296x128" placeholder="296x128">
-            </div>
-            
-            <input type="submit" value="Process Image">
-        </form>
-        
-        <p class="note">Note: DitherBox processes images with customizable dithering and grayscale levels.</p>
-        <?php
-    });
-}
-
-function displayResult($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb, $formOutput) {
-        ?>
-        <h1>DitherBox Result</h1>
-        
+    ?>
+    <h1>DitherBox</h1>
+    
+    <form method="POST" action="" enctype="multipart/form-data">
         <div>
-            <img src="<?php echo $base64Image; ?>" alt="Processed Image" class="result-image" style="width: 100%; max-width: <?php echo $tgtWidth; ?>px; height: auto; image-rendering: pixelated;">
+            <label for="image_source">Image Source:</label>
+            <select id="image_source" name="image_source" onchange="toggleSourceFields()">
+                <option value="url">Via URL</option>
+                <option value="file">Upload File</option>
+                <option value="collection">Random Collection</option>
+            </select>
+        </div>
+        
+        <div id="url_field">
+            <label for="url_input">Image URL:</label>
+            <input type="url" id="url_input" name="url" placeholder="https://example.com/image.jpg">
+        </div>
+        
+        <div id="file_field" style="display:none">
+            <label for="image">Select Image File:</label>
+            <input type="file" id="image" name="image" accept="image/*">
+        </div>
+        
+        <div id="collection_field" style="display:none">
+            <label for="col">Collection:</label>
+            <select id="col" name="col">
+                <option value="apod">Astronomy Picture of the Day</option>
+                <option value="tic">This Is Colossal</option>
+                <option value="jux">Juxtapoz</option>
+                <option value="veri">Veri Artem</option>
+                <option value="any">Random Collection</option>
+            </select>
         </div>
         
         <div>
-            <h2>Image Details</h2>
-            <p>
-                <small>
-                <?php echo strtoupper($fmt); ?> |
-                <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?> |
-                <?php echo $bits; ?> bits |
-                <?php global $ditheringMethods; echo isset($ditheringMethods[$dth]) ? $ditheringMethods[$dth] : $dth; ?> |
-                <?php echo $rb ? 'reduce bleeding' : ''; ?>
-                </small>
-            </p>
+            <label for="fmt">Output Format:</label>
+            <select id="fmt" name="fmt">
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="ppm">PPM</option>
+                <option value="pbm">PBM</option>
+                <option value="gif">GIF</option>
+            </select>
         </div>
-        <?php
+        
+        <div>
+            <label for="bits">Grayscale Bits: <span id="bits_value">1</span></label>
+            <input type="range" id="bits" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_value').textContent = this.value">
+        </div>
+        
+        <div>
+            <label for="ditherMethod">Dithering Method:</label>
+            <select id="ditherMethod" name="dth">
+                <option value="none">None</option>
+                <option value="fs" selected>Floyd-Steinberg</option>
+                <option value="ak">Atkinson</option>
+                <option value="jv">Jarvis, Judice & Ninke</option>
+                <option value="sk">Stucki</option>
+                <option value="bk">Burkes</option>
+                <option value="by">Bayer 2x2</option>
+            </select>
+        </div>
+        
+        <div>
+            <label>
+                <input type="checkbox" id="rb" name="rb" value="1" checked>
+                Reduce Color Bleeding
+            </label>
+        </div>
+        
+        <div>
+            <label for="res">Resolution (WxH):</label>
+            <input type="text" id="res" name="res" value="296x128" placeholder="296x128">
+        </div>
+        
+        <input type="submit" value="Process Image">
+    </form>
+    
+    <p class="note">Note: DitherBox processes images with customizable dithering and grayscale levels.</p>
+    <?php
 }
 
-// Add this before the try block to capture output
-ob_start();
-        
-// If no 'col' or 'url' are provided, show the upload form
-if (!isset($_GET['col']) && !isset($_GET['url']) && $_SERVER['REQUEST_METHOD'] !== 'POST') {
-    displayForm();
-    exit;
+/**
+ * Display the processed image result
+ */
+function displayResult($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb) {
+    ?>
+    <h1>DitherBox Result</h1>
+    
+    <div>
+        <img src="<?php echo $base64Image; ?>" alt="Processed Image" class="result-image" style="width: 100%; max-width: <?php echo $tgtWidth; ?>px; height: auto; image-rendering: pixelated;">
+    </div>
+    
+    <div>
+        <h2>Image Details</h2>
+        <p>
+            <small>
+            <?php echo strtoupper($fmt); ?> |
+            <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?> |
+            <?php echo $bits; ?> bits |
+            <?php global $ditheringMethods; echo isset($ditheringMethods[$dth]) ? $ditheringMethods[$dth] : $dth; ?> |
+            <?php echo $rb ? 'reduce bleeding' : ''; ?>
+            </small>
+        </p>
+    </div>
+    <?php
 }
 
-try {
-    // Check if URL parameter is provided
-    if ($imageUrl) {
-        // Validate URL
-        if (!filter_var($imageUrl, FILTER_VALIDATE_URL)) {
-            throw new Exception('Invalid URL provided');
-        }
-        
-        // Fetch image from URL
-        $imageData = file_get_contents($imageUrl);
-        if ($imageData === false) {
-            throw new Exception('Failed to fetch image from URL');
-        }
-    } else {
-        // Check if this is a POST request with image data
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Check if image file was uploaded
-            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-                // Get image data from uploaded file
-                $imageData = file_get_contents($_FILES['image']['tmp_name']);
-                if ($imageData === false) {
-                    throw new Exception('Failed to read uploaded image');
-                }
-            } else {
-                // Try to get image data from POST body
-                $imageData = file_get_contents('php://input');
-                if (empty($imageData)) {
-                    throw new Exception('No image data provided');
-                }
+// Initialize variables for display
+$processedImageData = null;
+$error = null;
+
+// Process image if needed
+if (isset($_GET['col']) || isset($_GET['url']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        // Check if URL parameter is provided
+        if ($imageUrl) {
+            // Validate URL
+            if (!filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+                throw new Exception('Invalid URL provided');
+            }
+            
+            // Fetch image from URL
+            $imageData = file_get_contents($imageUrl);
+            if ($imageData === false) {
+                throw new Exception('Failed to fetch image from URL');
             }
         } else {
-            // Fetch random image from specified collection
-            $imageData = fetchRandomImage($col);
+            // Check if this is a POST request with image data
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                // Check if image file was uploaded
+                if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                    // Get image data from uploaded file
+                    $imageData = file_get_contents($_FILES['image']['tmp_name']);
+                    if ($imageData === false) {
+                        throw new Exception('Failed to read uploaded image');
+                    }
+                } else {
+                    // Try to get image data from POST body
+                    $imageData = file_get_contents('php://input');
+                    if (empty($imageData)) {
+                        throw new Exception('No image data provided');
+                    }
+                }
+            } else {
+                // Fetch random image from specified collection
+                $imageData = fetchRandomImage($col);
+            }
         }
+        
+        // Process the image
+        $processedImage = processImage($imageData, $levels, $tgtWidth, $tgtHeight, $dth, $rb);
+        
+        // Save the processed image to a temporary file
+        $tempFile = tempnam(sys_get_temp_dir(), 'ditherbox_');
+        switch ($fmt) {
+            case 'jpg':
+            case 'jpeg':
+                imagejpeg($processedImage, $tempFile, 90);
+                break;
+            case 'gif':
+                imagegif($processedImage, $tempFile);
+                break;
+            case 'ppm':
+                // For PPM, we'll convert to PNG for web display
+                imagepng($processedImage, $tempFile);
+                break;
+            case 'pbm':
+                // For PBM, we'll convert to PNG for web display
+                imagepng($processedImage, $tempFile);
+                break;
+            case 'png':
+            default:
+                imagepng($processedImage, $tempFile);
+                break;
+        }
+        
+        // Clean up
+        imagedestroy($processedImage);
+        
+        // Get the image data for embedding
+        $imageData = file_get_contents($tempFile);
+        unlink($tempFile);
+        
+        // Get the MIME type for the image
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_buffer($finfo, $imageData);
+        finfo_close($finfo);
+        
+        // Convert image data to base64 for embedding
+        $processedImageData = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+        
+    } catch (Exception $e) {
+        $error = $e->getMessage();
     }
-    
-    // Process the image
-    $processedImage = processImage($imageData, $levels, $tgtWidth, $tgtHeight, $dth, $rb);
-    
-    // Save the processed image to a temporary file
-    $tempFile = tempnam(sys_get_temp_dir(), 'ditherbox_');
-    switch ($fmt) {
-        case 'jpg':
-        case 'jpeg':
-            imagejpeg($processedImage, $tempFile, 90);
-            break;
-        case 'gif':
-            imagegif($processedImage, $tempFile);
-            break;
-        case 'ppm':
-            // For PPM, we'll convert to PNG for web display
-            imagepng($processedImage, $tempFile);
-            break;
-        case 'pbm':
-            // For PBM, we'll convert to PNG for web display
-            imagepng($processedImage, $tempFile);
-            break;
-        case 'png':
-        default:
-            imagepng($processedImage, $tempFile);
-            break;
-    }
-    
-    // Clean up
-    imagedestroy($processedImage);
-    
-    // Get the image data for embedding
-    $imageData = file_get_contents($tempFile);
-    unlink($tempFile);
-    
-    // Get the MIME type for the image
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_buffer($finfo, $imageData);
-    finfo_close($finfo);
-    
-    // Convert image data to base64 for embedding
-    $base64Image = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
-    
-    // Get the form output
-    $formOutput = ob_get_clean();
-    
-    // Display the result
-    displayWebPage("DitherBox - Result", function() use ($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb, $formOutput) {
-        displayResult($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb, $formOutput);
-    });
+}
 
-} catch (Exception $e) {
-    // Get the form output
-    $formOutput = ob_get_clean();
+// Display the page
+displayWebPage($error ? "DitherBox - Error" : ($processedImageData ? "DitherBox - Result" : "DitherBox"), function() use ($processedImageData, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb, $error) {
+    if ($processedImageData) {
+        displayResult($processedImageData, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb);
+    }
     
-    // Handle errors
-    displayWebPage("DitherBox - Error", function() use ($e, $formOutput) {
+    if ($error) {
         ?>
         <h1>DitherBox Error</h1>
         
         <div class="error" style="color: red; padding: 1rem; border: 1px solid red; border-radius: 4px; background-color: #ffe6e6;">
-            Error: <?php echo $e->getMessage(); ?>
-        </div>
-        
-        <div>
-            <h2>Try Again</h2>
-            <?php echo $formOutput; ?>
+            Error: <?php echo $error; ?>
         </div>
         <?php
-    });
-}
+    }
+    
+    displayForm();
+});
 
 /**
  * Display a web page with common HTML structure
