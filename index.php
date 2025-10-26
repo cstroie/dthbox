@@ -1111,10 +1111,6 @@ function displayResult($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $
     <?php
 }
 
-// Initialize variables for display
-$processedImageData = null;
-$error = null;
-
 // Process image if needed
 if (isset($_GET['col']) || isset($_GET['url']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -1156,56 +1152,86 @@ if (isset($_GET['col']) || isset($_GET['url']) || $_SERVER['REQUEST_METHOD'] ===
         // Process the image
         $processedImage = processImage($imageData, $levels, $tgtWidth, $tgtHeight, $dth, $rb);
         
-        // Save the processed image to a temporary file
-        $tempFile = tempnam(sys_get_temp_dir(), 'ditherbox_');
+        // Set appropriate content type header
         switch ($fmt) {
             case 'jpg':
             case 'jpeg':
-                imagejpeg($processedImage, $tempFile, 90);
+                header('Content-Type: image/jpeg');
+                imagejpeg($processedImage, null, 90);
                 break;
             case 'gif':
-                imagegif($processedImage, $tempFile);
+                header('Content-Type: image/gif');
+                imagegif($processedImage);
                 break;
             case 'ppm':
-                // For PPM, we'll convert to PNG for web display
-                imagepng($processedImage, $tempFile);
+                header('Content-Type: image/x-portable-pixmap');
+                // Output PPM header
+                echo "P6\n{$tgtWidth} {$tgtHeight}\n255\n";
+                // Output pixel data
+                for ($y = 0; $y < $tgtHeight; $y++) {
+                    for ($x = 0; $x < $tgtWidth; $x++) {
+                        $rgb = imagecolorat($processedImage, $x, $y);
+                        $r = ($rgb >> 16) & 0xFF;
+                        $g = ($rgb >> 8) & 0xFF;
+                        $b = $rgb & 0xFF;
+                        echo chr($r) . chr($g) . chr($b);
+                    }
+                }
                 break;
             case 'pbm':
-                // For PBM, we'll convert to PNG for web display
-                imagepng($processedImage, $tempFile);
+                header('Content-Type: image/x-portable-bitmap');
+                // Output PBM header
+                echo "P4\n{$tgtWidth} {$tgtHeight}\n";
+                // Output pixel data (1 bit per pixel)
+                for ($y = 0; $y < $tgtHeight; $y++) {
+                    $byte = 0;
+                    $bitCount = 0;
+                    for ($x = 0; $x < $tgtWidth; $x++) {
+                        $rgb = imagecolorat($processedImage, $x, $y);
+                        $gray = ($rgb >> 16) & 0xFF;
+                        // Set bit if pixel is white (above threshold)
+                        if ($gray > 127) {
+                            $byte |= (1 << (7 - $bitCount));
+                        }
+                        $bitCount++;
+                        // Output byte when we have 8 bits
+                        if ($bitCount == 8) {
+                            echo chr($byte);
+                            $byte = 0;
+                            $bitCount = 0;
+                        }
+                    }
+                    // Output remaining bits in the last byte
+                    if ($bitCount > 0) {
+                        echo chr($byte);
+                    }
+                }
                 break;
             case 'png':
             default:
-                imagepng($processedImage, $tempFile);
+                header('Content-Type: image/png');
+                imagepng($processedImage);
                 break;
         }
         
         // Clean up
         imagedestroy($processedImage);
-        
-        // Get the image data for embedding
-        $imageData = file_get_contents($tempFile);
-        unlink($tempFile);
-        
-        // Get the MIME type for the image
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_buffer($finfo, $imageData);
-        finfo_close($finfo);
-        
-        // Convert image data to base64 for embedding
-        $processedImageData = 'data:' . $mimeType . ';base64,' . base64_encode($imageData);
+        exit;
         
     } catch (Exception $e) {
+        // For GET requests with parameters, output error directly
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' && (isset($_GET['col']) || isset($_GET['url']))) {
+            header('Content-Type: text/plain');
+            echo 'Error: ' . $e->getMessage();
+            exit;
+        }
+        // For POST requests, store error for display
         $error = $e->getMessage();
     }
 }
 
-// Display the page
-displayWebPage($error ? "DitherBox - Error" : ($processedImageData ? "DitherBox - Result" : "DitherBox"), function() use ($processedImageData, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb, $error) {
-    if ($processedImageData) {
-        displayResult($processedImageData, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb);
-    }
-    
+// Display the page for POST requests or when no parameters are provided
+displayWebPage($error ? "DitherBox - Error" : "DitherBox", function() use ($error) {
     if ($error) {
         ?>
         <h1>DitherBox Error</h1>
