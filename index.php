@@ -152,6 +152,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+/**
+ * Display the main upload form for the DitherBox application
+ * This function outputs the complete HTML form interface for users to:
+ * - Select an image source (URL, file upload, or collection)
+ * - Configure dithering parameters
+ * - Set output format and resolution
+ * 
+ * @return void Outputs HTML directly to the browser
+ */
 function showUploadForm() {
     ?>
     <!DOCTYPE html>
@@ -271,6 +280,16 @@ function showUploadForm() {
     <?php
 }
 
+/**
+ * Fetch image URLs from an RSS feed
+ * This function retrieves and parses an RSS feed to extract image URLs
+ * It first looks for image enclosures, then falls back to parsing img tags in descriptions
+ * 
+ * @param string $rssUrl The URL of the RSS feed to fetch
+ * @param string $siteName The name of the site (for error messages)
+ * @return array Array of image URLs found in the RSS feed
+ * @throws Exception If the RSS feed cannot be fetched or parsed, or no images are found
+ */
 function fetchImagesFromRss($rssUrl, $siteName) {
     // Fetch the RSS feed
     $rssContent = file_get_contents($rssUrl);
@@ -316,6 +335,12 @@ function fetchImagesFromRss($rssUrl, $siteName) {
     return $imageUrls;
 }
 
+/**
+ * Fetch a random image from the Astronomy Picture of the Day (APOD) RSS feed
+ * 
+ * @return string Image data as binary string
+ * @throws Exception If image cannot be fetched or processed
+ */
 function fetchRandomApodImage() {
     $imageUrls = fetchImagesFromRss('https://apod.com/feed.rss', 'APoD');
     
@@ -332,6 +357,12 @@ function fetchRandomApodImage() {
     return $imageData;
 }
 
+/**
+ * Fetch a random image from the This Is Colossal RSS feed
+ * 
+ * @return string Image data as binary string
+ * @throws Exception If image cannot be fetched or processed
+ */
 function fetchRandomTicImage() {
     $imageUrls = fetchImagesFromRss('https://www.thisiscolossal.com/feed/', 'TIC');
     
@@ -348,6 +379,12 @@ function fetchRandomTicImage() {
     return $imageData;
 }
 
+/**
+ * Fetch a random image from the Juxtapoz RSS feed
+ * 
+ * @return string Image data as binary string
+ * @throws Exception If image cannot be fetched or processed
+ */
 function fetchRandomJuxImage() {
     $imageUrls = fetchImagesFromRss('https://www.juxtapoz.com/news/?format=feed&type=rss', 'JUX');
     
@@ -364,6 +401,12 @@ function fetchRandomJuxImage() {
     return $imageData;
 }
 
+/**
+ * Fetch a random image from the Veri Artem RSS feed
+ * 
+ * @return string Image data as binary string
+ * @throws Exception If image cannot be fetched or processed
+ */
 function fetchRandomVeriImage() {
     $imageUrls = fetchImagesFromRss('https://veriartem.com/feed/', 'VERI');
     
@@ -380,6 +423,13 @@ function fetchRandomVeriImage() {
     return $imageData;
 }
 
+/**
+ * Fetch a random image from the specified collection
+ * 
+ * @param string $collection The collection to fetch from ('apod', 'tic', 'jux', 'veri', or 'any')
+ * @return string Image data as binary string
+ * @throws Exception If image cannot be fetched or processed
+ */
 function fetchRandomImage($collection) {
     switch ($collection) {
         case 'tic':
@@ -394,6 +444,24 @@ function fetchRandomImage($collection) {
     }
 }
 
+/**
+ * Process an image with resizing, cropping, and dithering
+ * This function takes raw image data and applies the specified processing:
+ * 1. Creates an image resource from the data
+ * 2. Resizes and crops to target dimensions
+ * 3. Converts to grayscale
+ * 4. Applies dithering or quantization
+ * 
+ * @param string $imageData Raw image data as binary string
+ * @param int $levels Number of grayscale levels (2^bits)
+ * @param int $tgtWidth Target width in pixels
+ * @param int $tgtHeight Target height in pixels
+ * @param string $dth Dithering method ('none', 'fs', 'ak', 'jv', 'sk', 'bk', 'by')
+ * @param bool $rb Reduce bleeding flag
+ * @param bool $useMaxSize Whether to use maximum size constraint (default: false)
+ * @return resource Processed image resource
+ * @throws Exception If image processing fails
+ */
 function processImage($imageData, $levels, $tgtWidth, $tgtHeight, $dth, $rb, $useMaxSize = false) {
     // Create image from data
     $srcImage = imagecreatefromstring($imageData);
@@ -498,6 +566,16 @@ function processImage($imageData, $levels, $tgtWidth, $tgtHeight, $dth, $rb, $us
     return $dstImage;
 }
 
+/**
+ * Apply Floyd-Steinberg dithering to an image
+ * This function implements the Floyd-Steinberg error diffusion algorithm
+ * with optional reduced bleeding mode
+ * 
+ * @param resource $image Image resource to process
+ * @param int $levels Number of grayscale levels
+ * @param bool $rb Reduce bleeding flag (default: true)
+ * @return void Modifies the image resource directly
+ */
 function dthFloydSteinberg($image, $levels, $rb = true) {
     $width = imagesx($image);
     $height = imagesy($image);
@@ -578,6 +656,16 @@ function dthFloydSteinberg($image, $levels, $rb = true) {
     }
 }
 
+/**
+ * Apply Atkinson dithering to an image
+ * This function implements the Atkinson error diffusion algorithm
+ * with optional reduced bleeding mode
+ * 
+ * @param resource $image Image resource to process
+ * @param int $levels Number of grayscale levels
+ * @param bool $rb Reduce bleeding flag (default: true)
+ * @return void Modifies the image resource directly
+ */
 function dthAtkinson($image, $levels, $rb = true) {
     $width = imagesx($image);
     $height = imagesy($image);
@@ -640,6 +728,16 @@ function dthAtkinson($image, $levels, $rb = true) {
     }
 }
 
+/**
+ * Apply Jarvis, Judice & Ninke dithering to an image
+ * This function implements the Jarvis error diffusion algorithm
+ * with optional reduced bleeding mode
+ * 
+ * @param resource $image Image resource to process
+ * @param int $levels Number of grayscale levels
+ * @param bool $rb Reduce bleeding flag (default: true)
+ * @return void Modifies the image resource directly
+ */
 function dthJarvis($image, $levels, $rb = true) {
     $width = imagesx($image);
     $height = imagesy($image);
@@ -749,6 +847,16 @@ function dthJarvis($image, $levels, $rb = true) {
     }
 }
 
+/**
+ * Apply Stucki dithering to an image
+ * This function implements the Stucki error diffusion algorithm
+ * with optional reduced bleeding mode
+ * 
+ * @param resource $image Image resource to process
+ * @param int $levels Number of grayscale levels
+ * @param bool $rb Reduce bleeding flag (default: true)
+ * @return void Modifies the image resource directly
+ */
 function dthStucki($image, $levels, $rb = true) {
     $width = imagesx($image);
     $height = imagesy($image);
@@ -858,6 +966,15 @@ function dthStucki($image, $levels, $rb = true) {
     }
 }
 
+/**
+ * Apply Bayer 2x2 ordered dithering to an image
+ * This function implements a simple ordered dithering algorithm
+ * using a 2x2 threshold matrix
+ * 
+ * @param resource $image Image resource to process
+ * @param int $levels Number of grayscale levels
+ * @return void Modifies the image resource directly
+ */
 function bayer2x2Dither($image, $levels) {
     $width = imagesx($image);
     $height = imagesy($image);
@@ -895,6 +1012,16 @@ function bayer2x2Dither($image, $levels) {
     }
 }
 
+/**
+ * Apply Burkes dithering to an image
+ * This function implements the Burkes error diffusion algorithm
+ * with optional reduced bleeding mode
+ * 
+ * @param resource $image Image resource to process
+ * @param int $levels Number of grayscale levels
+ * @param bool $rb Reduce bleeding flag (default: true)
+ * @return void Modifies the image resource directly
+ */
 function dthBurkes($image, $levels, $rb = true) {
     $width = imagesx($image);
     $height = imagesy($image);
@@ -972,6 +1099,14 @@ function dthBurkes($image, $levels, $rb = true) {
     }
 }
 
+/**
+ * Apply simple quantization (no dithering) to an image
+ * This function performs basic grayscale quantization without error diffusion
+ * 
+ * @param resource $image Image resource to process
+ * @param int $levels Number of grayscale levels
+ * @return void Modifies the image resource directly
+ */
 function dthNone($image, $levels) {
     $width = imagesx($image);
     $height = imagesy($image);
