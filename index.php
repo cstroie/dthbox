@@ -77,7 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get allowed formats
     global $allowedFormats;
     if (!in_array($fmt, $allowedFormats)) {
-        $fmt = 'png'; // Default to png if invalid format
+        // Default to png if invalid format
+        $fmt = 'png';
     }
         
     // Check for URL parameter in POST data
@@ -100,7 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fmt = isset($_GET['fmt']) ? strtolower($_GET['fmt']) : 'png';
     global $allowedFormats;
     if (!in_array($fmt, $allowedFormats)) {
-        $fmt = 'png'; // Default to png if invalid format
+        // Default to png if invalid format
+        $fmt = 'png';
     }
 
     // Get grayscale bits from query parameter, default to 1 (minimal grayscale)
