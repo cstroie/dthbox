@@ -472,41 +472,12 @@ function processImage($imageData, $levels, $tgtWidth, $tgtHeight, $dth, $rb, $us
                 break;
             default:
                 // Simple quantization for unknown methods
-                $step = 255 / ($levels - 1);
-                for ($y = 0; $y < $tgtHeight; $y++) {
-                    for ($x = 0; $x < $tgtWidth; $x++) {
-                        $rgb = imagecolorat($dstImage, $x, $y);
-                        // Get grayscale value
-                        $gray = ($rgb >> 16) & 0xFF;
-                        
-                        // Quantize to specified number of levels
-                        $quantized = round(round($gray / $step) * $step);
-                        // Clamp to valid range
-                        $quantized = max(0, min(255, $quantized));
-                        
-                        $newColor = imagecolorallocate($dstImage, $quantized, $quantized, $quantized);
-                        imagesetpixel($dstImage, $x, $y, $newColor);
-                    }
-                }
+                simpleQuantization($dstImage, $levels);
                 break;
         }
     } else if ($levels < 256) {
         // Simple quantization when dithering is disabled
-        $step = 255 / ($levels - 1);
-        for ($y = 0; $y < $tgtHeight; $y++) {
-            for ($x = 0; $x < $tgtWidth; $x++) {
-                $rgb = imagecolorat($dstImage, $x, $y);
-                $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
-                
-                // Quantize to specified number of levels
-                $quantized = round(round($gray / $step) * $step);
-                // Clamp to valid range
-                $quantized = max(0, min(255, $quantized));
-                
-                $newColor = imagecolorallocate($dstImage, $quantized, $quantized, $quantized);
-                imagesetpixel($dstImage, $x, $y, $newColor);
-            }
-        }
+        simpleQuantization($dstImage, $levels);
     }
     
     // Clean up source image
@@ -986,6 +957,29 @@ function burkesDither($image, $levels, $rb = true) {
         
         // Move to next row
         $errors = $nextErrors;
+    }
+}
+
+function simpleQuantization($image, $levels) {
+    $width = imagesx($image);
+    $height = imagesy($image);
+    
+    // Calculate quantization step
+    $step = 255 / ($levels - 1);
+    
+    for ($y = 0; $y < $height; $y++) {
+        for ($x = 0; $x < $width; $x++) {
+            $rgb = imagecolorat($image, $x, $y);
+            $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
+            
+            // Quantize to specified number of levels
+            $quantized = round(round($gray / $step) * $step);
+            // Clamp to valid range
+            $quantized = max(0, min(255, $quantized));
+            
+            $newColor = imagecolorallocate($image, $quantized, $quantized, $quantized);
+            imagesetpixel($image, $x, $y, $newColor);
+        }
     }
 }
 
