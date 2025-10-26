@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
     $bits = isset($_POST['bits']) ? intval($_POST['bits']) : 1;
     $res = isset($_POST['res']) ? $_POST['res'] : '296x128';
-    $ditherMethod = isset($_POST['dth']) ? $_POST['dth'] : 'floyd-steinberg';
+    $ditherMethod = isset($_POST['dth']) ? $_POST['dth'] : 'fs';
     $reduceBleeding = isset($_POST['rb']) ? (bool)$_POST['rb'] : true;
         
     // Validate and parse resolution
@@ -26,9 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetHeight = $maxSize;
         $useMaxSize = true;
     } else {
-        // Default to 296x128 if invalid format
-        $targetWidth = 296;
-        $targetHeight = 128;
+        // Default to 400x300 if invalid format
+        $targetWidth = 400;
+        $targetHeight = 300;
     }
         
     // Clamp bits between 1 and 8
@@ -37,9 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $levels = pow(2, $bits);
         
     // Get allowed formats
-    $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
-    if (!in_array($fmt, $allowedFormats)) {
-        $fmt = 'png'; // Default to png if invalid format
+    $formats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
+    if (!in_array($fmt, $formats)) {
+        // Default to png if invalid format
+        $fmt = 'png';
     }
         
     // Check for URL parameter in POST data
@@ -50,19 +51,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
     // Get collection from query parameter, default to random selection
     $col = isset($_GET['col']) ? strtolower($_GET['col']) : 'any';
-    $allowedCollections = ['apod', 'tic', 'jux', 'veri'];
+    $collections = ['apod', 'tic', 'jux', 'veri'];
 
     // If collection is 'any' or not specified, choose randomly from available collections
     // But only if no URL is provided
-    if (!$imageUrl && ($col === 'any' || !in_array($col, $allowedCollections))) {
-        $col = $allowedCollections[array_rand($allowedCollections)];
+    if (!$imageUrl && ($col === 'any' || !in_array($col, $collections))) {
+        $col = $collections[array_rand($collections)];
     }
 
     // Get format from query parameter, default to png
     $fmt = isset($_GET['fmt']) ? strtolower($_GET['fmt']) : 'png';
-    $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
-    if (!in_array($fmt, $allowedFormats)) {
-        $fmt = 'png'; // Default to png if invalid format
+    $formats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
+    if (!in_array($fmt, $formats)) {
+        // Default to png if invalid format
+        $fmt = 'png'; 
     }
 
     // Get grayscale bits from query parameter, default to 1 (minimal grayscale)
@@ -95,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
         
     // Get dithering parameters
-    $dth = isset($_GET['dth']) ? $_GET['dth'] : 'floyd-steinberg';
+    $dth = isset($_GET['dth']) ? $_GET['dth'] : 'fs';
     $rb = isset($_GET['rb']) ? (bool)$_GET['rb'] : true;
         
     // If no 'col' or 'url' are provided, show the upload form
@@ -197,12 +199,12 @@ function showUploadForm() {
                         <label for="dth">Dithering Method:</label>
                         <select id="dth" name="dth">
                             <option value="none">None</option>
-                            <option value="floyd-steinberg" selected>Floyd-Steinberg</option>
-                            <option value="atkinson">Atkinson</option>
-                            <option value="jarvis">Jarvis, Judice & Ninke</option>
-                            <option value="stucki">Stucki</option>
-                            <option value="burkes">Burkes</option>
-                            <option value="bayer2x2">Bayer 2x2</option>
+                            <option value="fs" selected>Floyd-Steinberg</option>
+                            <option value="ak">Atkinson</option>
+                            <option value="jv">Jarvis, Judice & Ninke</option>
+                            <option value="sk">Stucki</option>
+                            <option value="bk">Burkes</option>
+                            <option value="by">Bayer 2x2</option>
                         </select>
                     </div>
                     
@@ -540,22 +542,22 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight, $dth, $r
     // Apply dithering based on selected method for low levels, otherwise simple quantization
     if ($levels < 256 && $dth !== 'none') {
         switch ($dth) {
-            case 'floyd-steinberg':
+            case 'fs':
                 floydSteinbergDither($dstImage, $levels, $rb);
                 break;
-            case 'atkinson':
+            case 'ak':
                 atkinsonDither($dstImage, $levels, $rb);
                 break;
-            case 'jarvis':
+            case 'jv':
                 jarvisDither($dstImage, $levels, $rb);
                 break;
-            case 'stucki':
+            case 'sk':
                 stuckiDither($dstImage, $levels, $rb);
                 break;
-            case 'burkes':
+            case 'bk':
                 burkesDither($dstImage, $levels, $rb);
                 break;
-            case 'bayer2x2':
+            case 'by':
                 bayer2x2Dither($dstImage, $levels);
                 break;
             default:
