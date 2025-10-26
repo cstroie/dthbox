@@ -30,6 +30,16 @@ global $allowedFormats;
 $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
 global $defaultResolution;
 $defaultResolution = '296x128';
+global $ditheringMethods;
+$ditheringMethods = [
+    'none' => 'None',
+    'fs' => 'Floyd-Steinberg',
+    'ak' => 'Atkinson',
+    'jv' => 'Jarvis, Judice & Ninke',
+    'sk' => 'Stucki',
+    'bk' => 'Burkes',
+    'by' => 'Bayer 2x2'
+];
 
 // Check if this is a POST request with image data
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -1231,7 +1241,7 @@ try {
                 Format: <?php echo strtoupper($fmt); ?> |
                 Resolution: <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?> |
                 <?php echo $bits; ?> bits |
-                Dithering Method: <?php echo $dth; ?> |
+                Dithering Method: <?php global $ditheringMethods; echo isset($ditheringMethods[$dth]) ? $ditheringMethods[$dth] : $dth; ?> |
                 <?php echo $rb ? 'Reduce Bleeding' : ''; ?>
             </p>
         </div>
