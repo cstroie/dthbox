@@ -164,122 +164,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  * @return void Outputs HTML directly to the browser
  */
 function showUploadForm() {
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>DitherBox</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-        <style>
-            .container {
-                max-width: 800px;
-                margin: 2rem auto;
-                padding: 0 1rem;
-            }
-            .note {
-                font-size: 0.9rem;
-                color: var(--pico-muted-color);
-            }
-        </style>
-    </head>
-    <body>
-        <main class="container">
-            <h1>DitherBox</h1>
-            
-            <form method="POST" action="" enctype="multipart/form-data">
-                <div>
-                    <label for="image_source">Image Source:</label>
-                    <select id="image_source" name="image_source" onchange="toggleSourceFields()">
-                        <option value="url">Via URL</option>
-                        <option value="file">Upload File</option>
-                        <option value="collection">Random Collection</option>
-                    </select>
-                </div>
-                
-                <div id="url_field">
-                    <label for="url_input">Image URL:</label>
-                    <input type="url" id="url_input" name="url" placeholder="https://example.com/image.jpg">
-                </div>
-                
-                <div id="file_field" style="display:none">
-                    <label for="image">Select Image File:</label>
-                    <input type="file" id="image" name="image" accept="image/*">
-                </div>
-                
-                <div id="collection_field" style="display:none">
-                    <label for="col">Collection:</label>
-                    <select id="col" name="col">
-                        <option value="apod">Astronomy Picture of the Day</option>
-                        <option value="tic">This Is Colossal</option>
-                        <option value="jux">Juxtapoz</option>
-                        <option value="veri">Veri Artem</option>
-                        <option value="any">Random Collection</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="fmt">Output Format:</label>
-                    <select id="fmt" name="fmt">
-                        <option value="png">PNG</option>
-                        <option value="jpg">JPG</option>
-                        <option value="ppm">PPM</option>
-                        <option value="pbm">PBM</option>
-                        <option value="gif">GIF</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="bits">Grayscale Bits: <span id="bits_value">1</span></label>
-                    <input type="range" id="bits" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_value').textContent = this.value">
-                </div>
-                
-                <div>
-                    <label for="ditherMethod">Dithering Method:</label>
-                    <select id="ditherMethod" name="dth">
-                        <option value="none">None</option>
-                        <option value="fs" selected>Floyd-Steinberg</option>
-                        <option value="ak">Atkinson</option>
-                        <option value="jv">Jarvis, Judice & Ninke</option>
-                        <option value="sk">Stucki</option>
-                        <option value="bk">Burkes</option>
-                        <option value="by">Bayer 2x2</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label>
-                        <input type="checkbox" id="rb" name="rb" value="1" checked>
-                        Reduce Color Bleeding
-                    </label>
-                </div>
-                
-                <div>
-                    <label for="res">Resolution (WxH):</label>
-                    <input type="text" id="res" name="res" value="296x128" placeholder="296x128">
-                </div>
-                
-                <input type="submit" value="Process Image">
-            </form>
-            
-            <p class="note">Note: DitherBox processes images with customizable dithering and grayscale levels.</p>
-        </main>
+    displayWebPage("DitherBox", function() {
+        ?>
+        <h1>DitherBox</h1>
         
-        <script>
-            function toggleSourceFields() {
-                var source = document.getElementById('image_source').value;
-                document.getElementById('url_field').style.display = source === 'url' ? 'block' : 'none';
-                document.getElementById('file_field').style.display = source === 'file' ? 'block' : 'none';
-                document.getElementById('collection_field').style.display = source === 'collection' ? 'block' : 'none';
-            }
+        <form method="POST" action="" enctype="multipart/form-data">
+            <div>
+                <label for="image_source">Image Source:</label>
+                <select id="image_source" name="image_source" onchange="toggleSourceFields()">
+                    <option value="url">Via URL</option>
+                    <option value="file">Upload File</option>
+                    <option value="collection">Random Collection</option>
+                </select>
+            </div>
             
-            // Initialize the form fields based on the default selection
-            toggleSourceFields();
-        </script>
-    </body>
-    </html>
-    <?php
+            <div id="url_field">
+                <label for="url_input">Image URL:</label>
+                <input type="url" id="url_input" name="url" placeholder="https://example.com/image.jpg">
+            </div>
+            
+            <div id="file_field" style="display:none">
+                <label for="image">Select Image File:</label>
+                <input type="file" id="image" name="image" accept="image/*">
+            </div>
+            
+            <div id="collection_field" style="display:none">
+                <label for="col">Collection:</label>
+                <select id="col" name="col">
+                    <option value="apod">Astronomy Picture of the Day</option>
+                    <option value="tic">This Is Colossal</option>
+                    <option value="jux">Juxtapoz</option>
+                    <option value="veri">Veri Artem</option>
+                    <option value="any">Random Collection</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="fmt">Output Format:</label>
+                <select id="fmt" name="fmt">
+                    <option value="png">PNG</option>
+                    <option value="jpg">JPG</option>
+                    <option value="ppm">PPM</option>
+                    <option value="pbm">PBM</option>
+                    <option value="gif">GIF</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="bits">Grayscale Bits: <span id="bits_value">1</span></label>
+                <input type="range" id="bits" name="bits" min="1" max="8" value="1" oninput="document.getElementById('bits_value').textContent = this.value">
+            </div>
+            
+            <div>
+                <label for="ditherMethod">Dithering Method:</label>
+                <select id="ditherMethod" name="dth">
+                    <option value="none">None</option>
+                    <option value="fs" selected>Floyd-Steinberg</option>
+                    <option value="ak">Atkinson</option>
+                    <option value="jv">Jarvis, Judice & Ninke</option>
+                    <option value="sk">Stucki</option>
+                    <option value="bk">Burkes</option>
+                    <option value="by">Bayer 2x2</option>
+                </select>
+            </div>
+            
+            <div>
+                <label>
+                    <input type="checkbox" id="rb" name="rb" value="1" checked>
+                    Reduce Color Bleeding
+                </label>
+            </div>
+            
+            <div>
+                <label for="res">Resolution (WxH):</label>
+                <input type="text" id="res" name="res" value="296x128" placeholder="296x128">
+            </div>
+            
+            <input type="submit" value="Process Image">
+        </form>
+        
+        <p class="note">Note: DitherBox processes images with customizable dithering and grayscale levels.</p>
+        <?php
+    });
 }
 
 /**
@@ -1251,25 +1217,74 @@ try {
     $formOutput = ob_get_clean();
     
     // Display the result page with embedded image
+    displayWebPage("DitherBox - Result", function() use ($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb, $formOutput) {
+        ?>
+        <h1>DitherBox Result</h1>
+        
+        <div>
+            <img src="<?php echo $base64Image; ?>" alt="Processed Image" class="result-image" style="width: 100%; max-width: <?php echo $tgtWidth; ?>px; height: auto; image-rendering: pixelated;">
+        </div>
+        
+        <div>
+            <h2>Image Details</h2>
+            <ul>
+                <li>Format: <?php echo strtoupper($fmt); ?></li>
+                <li>Resolution: <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?></li>
+                <li>Grayscale Bits: <?php echo $bits; ?></li>
+                <li>Dithering Method: <?php echo $dth; ?></li>
+                <li>Reduce Bleeding: <?php echo $rb ? 'Yes' : 'No'; ?></li>
+            </ul>
+        </div>
+        
+        <div>
+            <h2>Process Another Image</h2>
+            <?php echo $formOutput; ?>
+        </div>
+        <?php
+    });
+} catch (Exception $e) {
+    // Get the form output
+    $formOutput = ob_get_clean();
+    
+    // Handle errors
+    displayWebPage("DitherBox - Error", function() use ($e, $formOutput) {
+        ?>
+        <h1>DitherBox Error</h1>
+        
+        <div class="error" style="color: red; padding: 1rem; border: 1px solid red; border-radius: 4px; background-color: #ffe6e6;">
+            Error: <?php echo $e->getMessage(); ?>
+        </div>
+        
+        <div>
+            <h2>Try Again</h2>
+            <?php echo $formOutput; ?>
+        </div>
+        <?php
+    });
+}
+
+/**
+ * Display a web page with common HTML structure
+ * This function provides a consistent layout for all pages in the application
+ * 
+ * @param string $title The page title
+ * @param callable $contentCallback Function that outputs the page content
+ * @return void Outputs HTML directly to the browser
+ */
+function displayWebPage($title, $contentCallback) {
     ?>
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>DitherBox - Result</title>
+        <title><?php echo $title; ?></title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
         <style>
             .container {
                 max-width: 800px;
                 margin: 2rem auto;
                 padding: 0 1rem;
-            }
-            .result-image {
-                width: 100%;
-                max-width: <?php echo $tgtWidth; ?>px;
-                height: auto;
-                image-rendering: pixelated;
             }
             .note {
                 font-size: 0.9rem;
@@ -1279,100 +1294,29 @@ try {
     </head>
     <body>
         <main class="container">
-            <h1>DitherBox Result</h1>
-            
-            <div>
-                <img src="<?php echo $base64Image; ?>" alt="Processed Image" class="result-image">
-            </div>
-            
-            <div>
-                <h2>Image Details</h2>
-                <ul>
-                    <li>Format: <?php echo strtoupper($fmt); ?></li>
-                    <li>Resolution: <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?></li>
-                    <li>Grayscale Bits: <?php echo $bits; ?></li>
-                    <li>Dithering Method: <?php echo $dth; ?></li>
-                    <li>Reduce Bleeding: <?php echo $rb ? 'Yes' : 'No'; ?></li>
-                </ul>
-            </div>
-            
-            <div>
-                <h2>Process Another Image</h2>
-                <?php echo $formOutput; ?>
-            </div>
-            
-            <script>
-                function toggleSourceFields() {
-                    var source = document.getElementById('image_source').value;
-                    document.getElementById('url_field').style.display = source === 'url' ? 'block' : 'none';
-                    document.getElementById('file_field').style.display = source === 'file' ? 'block' : 'none';
-                    document.getElementById('collection_field').style.display = source === 'collection' ? 'block' : 'none';
-                }
-                
-                // Initialize the form fields based on the default selection
-                if (document.getElementById('image_source')) {
-                    toggleSourceFields();
-                }
-            </script>
+            <?php $contentCallback(); ?>
         </main>
-    </body>
-    </html>
-    <?php
-} catch (Exception $e) {
-    // Get the form output
-    $formOutput = ob_get_clean();
-    
-    // Handle errors
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>DitherBox - Error</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-        <style>
-            .container {
-                max-width: 800px;
-                margin: 2rem auto;
-                padding: 0 1rem;
-            }
-            .error {
-                color: red;
-                padding: 1rem;
-                border: 1px solid red;
-                border-radius: 4px;
-                background-color: #ffe6e6;
-            }
-        </style>
-    </head>
-    <body>
-        <main class="container">
-            <h1>DitherBox Error</h1>
-            
-            <div class="error">
-                Error: <?php echo $e->getMessage(); ?>
-            </div>
-            
-            <div>
-                <h2>Try Again</h2>
-                <?php echo $formOutput; ?>
-            </div>
-            
-            <script>
-                function toggleSourceFields() {
-                    var source = document.getElementById('image_source').value;
-                    document.getElementById('url_field').style.display = source === 'url' ? 'block' : 'none';
-                    document.getElementById('file_field').style.display = source === 'file' ? 'block' : 'none';
-                    document.getElementById('collection_field').style.display = source === 'collection' ? 'block' : 'none';
-                }
+        
+        <script>
+            function toggleSourceFields() {
+                var source = document.getElementById('image_source');
+                if (!source) return;
                 
-                // Initialize the form fields based on the default selection
-                if (document.getElementById('image_source')) {
-                    toggleSourceFields();
-                }
-            </script>
-        </main>
+                source = source.value;
+                var urlField = document.getElementById('url_field');
+                var fileField = document.getElementById('file_field');
+                var collectionField = document.getElementById('collection_field');
+                
+                if (urlField) urlField.style.display = source === 'url' ? 'block' : 'none';
+                if (fileField) fileField.style.display = source === 'file' ? 'block' : 'none';
+                if (collectionField) collectionField.style.display = source === 'collection' ? 'block' : 'none';
+            }
+            
+            // Initialize the form fields based on the default selection
+            document.addEventListener('DOMContentLoaded', function() {
+                toggleSourceFields();
+            });
+        </script>
     </body>
     </html>
     <?php
