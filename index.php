@@ -1250,6 +1250,10 @@ try {
     // Get the form output
     $formOutput = ob_get_clean();
     
+    // Display the result
+    displayWebPage("DitherBox - Result", function() use ($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb, $formOutput) {
+        displayResult($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $rb, $formOutput);
+    });
 
 } catch (Exception $e) {
     // Get the form output
