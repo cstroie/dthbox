@@ -1230,9 +1230,9 @@ try {
             <p>
                 Format: <?php echo strtoupper($fmt); ?> |
                 Resolution: <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?> |
-                Grayscale Bits: <?php echo $bits; ?> |
+                <?php echo $bits; ?> bits |
                 Dithering Method: <?php echo $dth; ?> |
-                Reduce Bleeding: <?php echo $rb ? 'Yes' : 'No'; ?>
+                <?php echo $rb ? 'Reduce Bleeding' : ''; ?>
             </p>
         </div>
         
