@@ -50,7 +50,7 @@ $collections = [
 global $allowedFormats;
 $allowedFormats = ['png', 'jpg', 'jpeg', 'ppm', 'pbm', 'gif'];
 global $defaultResolution;
-$defaultResolution = '296x128';
+$defaultResolution = '400x300';
 global $ditheringMethods;
 $ditheringMethods = [
     'none' => 'None',
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get parameters from POST data or use defaults
     $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
     $bits = isset($_POST['bits']) ? intval($_POST['bits']) : 1;
-    $res = isset($_POST['res']) ? $_POST['res'] : '296x128';
+    $res = isset($_POST['res']) ? $_POST['res'] : '400x300';
     $dth = isset($_POST['dth']) ? $_POST['dth'] : 'fs';
     $rb = isset($_POST['rb']) ? (bool)$_POST['rb'] : true;
         
@@ -1075,7 +1075,7 @@ function displayForm() {
         
         <div>
             <label for="res">Resolution (WxH):</label>
-            <input type="text" id="res" name="res" value="296x128" placeholder="296x128">
+            <input type="text" id="res" name="res" value="400x300" placeholder="400x300">
         </div>
         
         <input type="submit" value="Process Image">
