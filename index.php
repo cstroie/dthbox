@@ -92,8 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tgtWidth = intval($matches[1]);
             $tgtHeight = intval($matches[2]);
         } else {
-            $tgtWidth = 296;
-            $tgtHeight = 128;
+            $tgtWidth = 400;
+            $tgtHeight = 300;
         }
         // Ensure reasonable limits to prevent abuse
         $tgtWidth = max(1, min(2000, $tgtWidth));
@@ -155,8 +155,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Convert bits to levels
     $levels = pow(2, $bits);
 
-    // Get resolution from query parameter, default to 296x128
-    $res = isset($_GET['res']) ? $_GET['res'] : '296x128';
+    // Get resolution from query parameter, default to 400x300
+    $res = isset($_GET['res']) ? $_GET['res'] : '400x300';
     // Validate and parse resolution
     if (preg_match('/^(\d+)x(\d+)$/', $res, $matches)) {
         $tgtWidth = intval($matches[1]);
