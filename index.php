@@ -21,31 +21,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
     // Validate and parse resolution
     if (preg_match('/^(\d+)x(\d+)$/', $res, $matches)) {
-        $targetWidth = intval($matches[1]);
-        $targetHeight = intval($matches[2]);
+        $tgtWidth = intval($matches[1]);
+        $tgtHeight = intval($matches[2]);
         // Ensure reasonable limits to prevent abuse
-        $targetWidth = max(1, min(2000, $targetWidth));
-        $targetHeight = max(1, min(2000, $targetHeight));
+        $tgtWidth = max(1, min(2000, $tgtWidth));
+        $tgtHeight = max(1, min(2000, $tgtHeight));
     } else if (is_numeric($res)) {
         // If res is a single number, treat it as maximum size
         $maxSize = max(1, min(2000, intval($res)));
         // We'll determine actual dimensions after loading the image
-        $targetWidth = $maxSize;
-        $targetHeight = $maxSize;
+        $tgtWidth = $maxSize;
+        $tgtHeight = $maxSize;
         $useMaxSize = true;
     } else {
         // Default to global default resolution if invalid format
         global $defRes;
         if (preg_match('/^(\d+)x(\d+)$/', $defRes, $matches)) {
-            $targetWidth = intval($matches[1]);
-            $targetHeight = intval($matches[2]);
+            $tgtWidth = intval($matches[1]);
+            $tgtHeight = intval($matches[2]);
         } else {
-            $targetWidth = 400;
-            $targetHeight = 300;
+            $tgtWidth = 400;
+            $tgtHeight = 300;
         }
         // Ensure reasonable limits to prevent abuse
-        $targetWidth = max(1, min(2000, $targetWidth));
-        $targetHeight = max(1, min(2000, $targetHeight));
+        $tgtWidth = max(1, min(2000, $tgtWidth));
+        $tgtHeight = max(1, min(2000, $tgtHeight));
     }
         
     // Clamp bits between 1 and 8
@@ -94,31 +94,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $res = isset($_GET['res']) ? $_GET['res'] : '296x128';
     // Validate and parse resolution
     if (preg_match('/^(\d+)x(\d+)$/', $res, $matches)) {
-        $targetWidth = intval($matches[1]);
-        $targetHeight = intval($matches[2]);
+        $tgtWidth = intval($matches[1]);
+        $tgtHeight = intval($matches[2]);
         // Ensure reasonable limits to prevent abuse
-        $targetWidth = max(1, min(2000, $targetWidth));
-        $targetHeight = max(1, min(2000, $targetHeight));
+        $tgtWidth = max(1, min(2000, $tgtWidth));
+        $tgtHeight = max(1, min(2000, $tgtHeight));
     } else if (is_numeric($res)) {
         // If res is a single number, treat it as maximum size
         $maxSize = max(1, min(2000, intval($res)));
         // We'll determine actual dimensions after loading the image
-        $targetWidth = $maxSize;
-        $targetHeight = $maxSize;
+        $tgtWidth = $maxSize;
+        $tgtHeight = $maxSize;
         $useMaxSize = true;
     } else {
         // Default to global default resolution if invalid format
         global $defRes;
         if (preg_match('/^(\d+)x(\d+)$/', $defRes, $matches)) {
-            $targetWidth = intval($matches[1]);
-            $targetHeight = intval($matches[2]);
+            $tgtWidth = intval($matches[1]);
+            $tgtHeight = intval($matches[2]);
         } else {
-            $targetWidth = 296;
-            $targetHeight = 128;
+            $tgtWidth = 296;
+            $tgtHeight = 128;
         }
         // Ensure reasonable limits to prevent abuse
-        $targetWidth = max(1, min(2000, $targetWidth));
-        $targetHeight = max(1, min(2000, $targetHeight));
+        $tgtWidth = max(1, min(2000, $tgtWidth));
+        $tgtHeight = max(1, min(2000, $tgtHeight));
     }
         
     // Get dithering parameters
@@ -382,7 +382,7 @@ function fetchRandomImage($collection) {
     }
 }
 
-function processImage($imageData, $levels, $targetWidth, $targetHeight, $dth, $rb, $useMaxSize = false) {
+function processImage($imageData, $levels, $tgtWidth, $tgtHeight, $dth, $rb, $useMaxSize = false) {
     // Create image from data
     $srcImage = imagecreatefromstring($imageData);
     
@@ -396,19 +396,19 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight, $dth, $r
     
     // If using max size, calculate target dimensions while maintaining aspect ratio
     if ($useMaxSize) {
-        $maxSize = $targetWidth; // Both width and height are set to the same max value
+        $maxSize = $tgtWidth; // Both width and height are set to the same max value
         if ($srcWidth > $srcHeight) {
             // Landscape image
-            $targetWidth = $maxSize;
-            $targetHeight = intval($srcHeight * $maxSize / $srcWidth);
+            $tgtWidth = $maxSize;
+            $tgtHeight = intval($srcHeight * $maxSize / $srcWidth);
         } else {
             // Portrait or square image
-            $targetHeight = $maxSize;
-            $targetWidth = intval($srcWidth * $maxSize / $srcHeight);
+            $tgtHeight = $maxSize;
+            $tgtWidth = intval($srcWidth * $maxSize / $srcHeight);
         }
         // Ensure dimensions are at least 1
-        $targetWidth = max(1, $targetWidth);
-        $targetHeight = max(1, $targetHeight);
+        $tgtWidth = max(1, $tgtWidth);
+        $tgtHeight = max(1, $tgtHeight);
         
         // Set crop dimensions to full image (no cropping)
         $cropWidth = $srcWidth;
@@ -418,7 +418,7 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight, $dth, $r
     } else {
         // Calculate crop dimensions to maintain aspect ratio
         $srcRatio = $srcWidth / $srcHeight;
-        $targetRatio = $targetWidth / $targetHeight;
+        $targetRatio = $tgtWidth / $tgtHeight;
         
         if ($srcRatio > $targetRatio) {
             // Source is wider, crop width
@@ -436,13 +436,13 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight, $dth, $r
     }
     
     // Create destination image
-    $dstImage = imagecreatetruecolor($targetWidth, $targetHeight);
+    $dstImage = imagecreatetruecolor($tgtWidth, $tgtHeight);
     
     // Resize and crop
     imagecopyresampled(
         $dstImage, $srcImage,
         0, 0, $srcX, $srcY,
-        $targetWidth, $targetHeight,
+        $tgtWidth, $tgtHeight,
         $cropWidth, $cropHeight
     );
     
@@ -473,10 +473,11 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight, $dth, $r
             default:
                 // Simple quantization for unknown methods
                 $step = 255 / ($levels - 1);
-                for ($y = 0; $y < $targetHeight; $y++) {
-                    for ($x = 0; $x < $targetWidth; $x++) {
+                for ($y = 0; $y < $tgtHeight; $y++) {
+                    for ($x = 0; $x < $tgtWidth; $x++) {
                         $rgb = imagecolorat($dstImage, $x, $y);
-                        $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
+                        // Get grayscale value
+                        $gray = ($rgb >> 16) & 0xFF;
                         
                         // Quantize to specified number of levels
                         $quantized = round(round($gray / $step) * $step);
@@ -492,8 +493,8 @@ function processImage($imageData, $levels, $targetWidth, $targetHeight, $dth, $r
     } else if ($levels < 256) {
         // Simple quantization when dithering is disabled
         $step = 255 / ($levels - 1);
-        for ($y = 0; $y < $targetHeight; $y++) {
-            for ($x = 0; $x < $targetWidth; $x++) {
+        for ($y = 0; $y < $tgtHeight; $y++) {
+            for ($x = 0; $x < $tgtWidth; $x++) {
                 $rgb = imagecolorat($dstImage, $x, $y);
                 $gray = ($rgb >> 16) & 0xFF; // Get grayscale value
                 
@@ -1028,7 +1029,7 @@ try {
     }
     
     // Process the image
-    $processedImage = processImage($imageData, $levels, $targetWidth, $targetHeight, $dth, $rb);
+    $processedImage = processImage($imageData, $levels, $tgtWidth, $tgtHeight, $dth, $rb);
     
     // Save the processed image to a temporary file
     $tempFile = tempnam(sys_get_temp_dir(), 'ditherbox_');
@@ -1089,7 +1090,7 @@ try {
             }
             .result-image {
                 width: 100%;
-                max-width: <?php echo $targetWidth; ?>px;
+                max-width: <?php echo $tgtWidth; ?>px;
                 height: auto;
                 image-rendering: pixelated;
             }
@@ -1111,7 +1112,7 @@ try {
                 <h2>Image Details</h2>
                 <ul>
                     <li>Format: <?php echo strtoupper($fmt); ?></li>
-                    <li>Resolution: <?php echo $targetWidth; ?>x<?php echo $targetHeight; ?></li>
+                    <li>Resolution: <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?></li>
                     <li>Grayscale Bits: <?php echo $bits; ?></li>
                     <li>Dithering Method: <?php echo $dth; ?></li>
                     <li>Reduce Bleeding: <?php echo $rb ? 'Yes' : 'No'; ?></li>
