@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
     // Get collection from query parameter, default to random selection
     $col = isset($_GET['col']) ? strtolower($_GET['col']) : 'any';
+    global $collections;
     $collections = ['apod', 'tic', 'jux', 'veri'];
 
     // If collection is 'any' or not specified, choose randomly from available collections
