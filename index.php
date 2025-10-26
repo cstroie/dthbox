@@ -1238,10 +1238,10 @@ try {
         <div>
             <h2>Image Details</h2>
             <p>
-                Format: <?php echo strtoupper($fmt); ?> |
-                Resolution: <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?> |
+                <?php echo strtoupper($fmt); ?> |
+                <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?> |
                 <?php echo $bits; ?> bits |
-                Dithering Method: <?php global $ditheringMethods; echo isset($ditheringMethods[$dth]) ? $ditheringMethods[$dth] : $dth; ?> |
+                <?php global $ditheringMethods; echo isset($ditheringMethods[$dth]) ? $ditheringMethods[$dth] : $dth; ?> |
                 <?php echo $rb ? 'Reduce Bleeding' : ''; ?>
             </p>
         </div>
