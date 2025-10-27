@@ -153,12 +153,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fmt = 'png';
     }
 
-    // Get grayscale bits from query parameter, default to 1 (minimal grayscale)
-    $bits = isset($_GET['bits']) ? intval($_GET['bits']) : 1;
-    // Clamp bits between 1 and 8
-    $bits = max(1, min(8, $bits));
-    // Convert bits to levels
-    $levels = pow(2, $bits);
+    // Get grayscale levels from query parameter, default to 2 (1 bit)
+    $levels = isset($_GET['lvl']) ? intval($_GET['lvl']) : 0;
+    if ($levels > 0) {
+        // If levels specified, clamp between 2 and 256
+        $levels = max(2, min(256, $levels));
+    } else {
+        // If no levels specified, use bits parameter
+        $bits = isset($_GET['bits']) ? intval($_GET['bits']) : 1;
+        // Clamp bits between 1 and 8
+        $bits = max(1, min(8, $bits));
+        // Convert bits to levels
+        $levels = pow(2, $bits);
+    }
 
     // Get resolution from query parameter, default to 400x300
     $res = isset($_GET['res']) ? $_GET['res'] : '400x300';
@@ -1062,6 +1069,11 @@ function displayForm() {
         </div>
         
         <div>
+            <label for="levels">Grayscale levels (overrides bits):</label>
+            <input type="number" id="levels" name="lvl" min="2" max="256" placeholder="2-256">
+        </div>
+        
+        <div>
             <label for="ditherMethod">Dithering method:</label>
             <select id="ditherMethod" name="dth">
                 <option value="none">None</option>
@@ -1110,7 +1122,14 @@ function displayResult($base64Image, $tgtWidth, $tgtHeight, $fmt, $bits, $dth, $
             <small>
             <?php echo strtoupper($fmt); ?> |
             <?php echo $tgtWidth; ?>x<?php echo $tgtHeight; ?> |
-            <?php echo $bits; ?> bits |
+            <?php 
+            // Display either levels or bits depending on which was used
+            if (isset($_GET['lvl']) && intval($_GET['lvl']) > 0) {
+                echo $_GET['lvl'] . ' levels';
+            } else {
+                echo $bits . ' bits';
+            }
+            ?> |
             <?php global $dthMethods; echo isset($dthMethods[$dth]) ? $dthMethods[$dth] : $dth; ?> |
             <?php echo $rb ? 'reduce bleeding' : ''; ?>
             </small>
