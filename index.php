@@ -71,10 +71,25 @@ $dthMethods = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get parameters from POST data or use defaults
     $fmt = isset($_POST['fmt']) ? strtolower($_POST['fmt']) : 'png';
-    $bits = isset($_POST['bits']) ? intval($_POST['bits']) : 1;
     $res = isset($_POST['res']) ? $_POST['res'] : $defRes;
     $dth = isset($_POST['dth']) ? $_POST['dth'] : 'fs';
     $rb = isset($_POST['rb']) ? (bool)$_POST['rb'] : true;
+        
+    // Get grayscale levels from POST parameter, default to 0 (use bits)
+    $levels = isset($_POST['lvl']) ? intval($_POST['lvl']) : 0;
+    if ($levels > 0) {
+        // If levels specified, clamp between 2 and 256
+        $levels = max(2, min(256, $levels));
+        // Calculate bits from levels for display purposes
+        $bits = ceil(log($levels, 2));
+    } else {
+        // If no levels specified, use bits parameter
+        $bits = isset($_POST['bits']) ? intval($_POST['bits']) : 1;
+        // Clamp bits between 1 and 8
+        $bits = max(1, min(8, $bits));
+        // Convert bits to levels
+        $levels = pow(2, $bits);
+    }
         
     // Validate and parse resolution
     if (preg_match('/^(\d+)x(\d+)$/', $res, $matches)) {
