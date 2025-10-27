@@ -13,7 +13,7 @@ A PHP-based image dithering tool that converts images to various grayscale forma
   - Bayer 2x2 ordered dithering
   - No dithering (simple quantization)
 - Support for various output formats: PNG, JPG, PPM, PBM, GIF
-- Customizable grayscale levels (1-8 bits)
+- Customizable grayscale levels (1-8 bits or 2-256 levels)
 - Adjustable output resolution
 - Three image sources:
   - Direct URL input
@@ -23,6 +23,7 @@ A PHP-based image dithering tool that converts images to various grayscale forma
     - This Is Colossal
     - Juxtapoz
     - Veri Artem
+    - Catster
 - Reduce color bleeding option for softer dithering effects
 
 ## Requirements
@@ -59,6 +60,7 @@ You can also use DitherBox programmatically by sending GET or POST requests with
 - `url` - Image URL (for URL-based processing)
 - `fmt` - Output format (png, jpg, ppm, pbm, gif)
 - `bits` - Grayscale bits (1-8)
+- `lvl` - Grayscale levels (2-256, takes precedence over bits)
 - `res` - Resolution (WxH format or single number for max size)
 - `dth` - Dithering method (fs, ak, jv, sk, bk, by, none)
 - `rb` - Reduce bleeding (1 for true, 0 for false)
@@ -76,6 +78,9 @@ You can also use curl to process images from the command line:
 ```bash
 # Process an image from a URL and get the result directly
 curl "http://localhost/index.php?url=https://example.com/image.jpg&bits=2&dth=fs&fmt=png" -o output.png
+
+# Process an image with specific grayscale levels
+curl "http://localhost/index.php?url=https://example.com/image.jpg&lvl=16&dth=fs&fmt=png" -o output.png
 
 # Upload a local image file and get the result directly
 curl -F "image=@local_image.jpg" -F "bits=3" -F "dth=ak" -F "fmt=png" http://localhost/index.php -o output.png
