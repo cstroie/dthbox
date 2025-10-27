@@ -45,6 +45,11 @@ $collections = [
         'id' => 'veri',
         'name' => 'Veri Artem',
         'url' => 'https://veriartem.com/feed/'
+    ],
+    'cat' => [
+        'id' => 'cat',
+        'name' => 'Catster',
+        'url' => 'https://www.catster.com/feed/'
     ]
 ];
 global $formats;
