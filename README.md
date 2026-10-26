@@ -10,9 +10,10 @@ A PHP-based image dithering tool that converts images to various grayscale forma
   - Jarvis, Judice & Ninke
   - Stucki
   - Burkes
-  - Bayer 2x2 ordered dithering
+  - Sierra and Sierra Lite
+  - Bayer 2x2, 4x4 and 8x8 ordered dithering
   - No dithering (simple quantization)
-- Support for various output formats: PNG, JPG, PPM, PBM, GIF
+- Support for various output formats: PNG, JPG, GIF, PPM, PGM, PBM (1-bit PNG/GIF are written as small palette images)
 - Customizable grayscale levels (1-8 bits)
 - Adjustable output resolution
 - Three image sources:
@@ -23,12 +24,16 @@ A PHP-based image dithering tool that converts images to various grayscale forma
     - This Is Colossal
     - Juxtapoz
     - Veri Artem
-- Reduce color bleeding option for softer dithering effects
+- Reduce color bleeding option for softer dithering effects, serpentine scanning
+- Brightness, contrast, gamma, invert, rotate, and cover/contain fit
+- EXIF orientation is honoured, transparent images are flattened onto white
 
 ## Requirements
 
 - PHP 7.0 or higher
 - GD Image Library extension
+- cURL extension (remote fetching)
+- EXIF extension (optional, for photo orientation)
 - Internet access (for fetching images from URLs and RSS feeds)
 
 ## Installation
@@ -57,11 +62,19 @@ A PHP-based image dithering tool that converts images to various grayscale forma
 You can also use DitherBox programmatically by sending GET or POST requests with the following parameters:
 
 - `url` - Image URL (for URL-based processing)
-- `fmt` - Output format (png, jpg, ppm, pbm, gif)
+- `fmt` - Output format (png, jpg, gif, ppm, pgm, pbm)
 - `bits` - Grayscale bits (1-8)
 - `res` - Resolution (WxH format or single number for max size)
-- `dth` - Dithering method (fs, ak, jv, sk, bk, by, none)
-- `rb` - Reduce bleeding (1 for true, 0 for false)
+- `dth` - Dithering method (fs, ak, jv, sk, bk, sr, sl, by, by4, by8, none)
+- `rb` - Reduce bleeding (1 for true, 0 for false, default 1)
+- `serp` - Serpentine scanning (0/1, default 0)
+- `brightness`, `contrast` - -100 to 100 (default 0)
+- `gamma` - 0.1 to 5 (default 1; above 1 brightens midtones)
+- `invert` - Invert the image (0/1)
+- `rotate` - Clockwise rotation: 0, 90, 180, 270
+- `fit` - `cover` (crop, default) or `contain` (pad with white); ignored when `res` is a single number
+- `image` (POST, multipart) - uploaded image file; a raw image in the POST body also works
+- `ui` (POST) - set to 1 to get the HTML result page instead of the raw image
 - `col` - Collection for random images (apod, tic, jux, veri, any)
 
 Example:
@@ -85,6 +98,24 @@ curl "http://localhost/index.php?col=apod&bits=1&dth=jv&fmt=gif" -o output.gif
 
 # Get a random image from a collection for an epaper display
 curl "http://localhost/index.php?col=any&bits=1&dth=jv&fmt=pbm&res=296x128" -o output.pbm
+```
+
+## Security and limits
+
+- Only `http`/`https` URLs are fetched, hosts resolving to private/loopback/reserved addresses are refused
+  (checked again on every redirect), downloads are limited to 15 MiB and 20 s.
+- Source images over 40 megapixels are rejected; output is limited to 2000x2000.
+- Requests are rate limited per IP (default 60 per minute). Set the `DTHBOX_RATE` environment variable to change it
+  (`0` disables). Set `DTHBOX_ALLOW_PRIVATE=1` to allow fetching from private addresses (e.g. local testing).
+- RSS feed image lists are cached in the system temp directory for 30 minutes.
+- Errors are returned with proper HTTP status codes (400, 413, 415, 429, 502, ...).
+
+## Tests
+
+The dithering core, encoders, URL validation and feed parsing do not need GD and can be tested with:
+
+```bash
+php tests/run.php
 ```
 
 ## License
