@@ -40,7 +40,8 @@ A PHP-based image dithering tool that converts images to various grayscale forma
 
 1. Clone or download this repository
 2. Place the `index.php` file on a web server with PHP support
-3. Ensure the GD library is enabled in your PHP configuration
+3. Ensure the GD and cURL extensions are enabled in your PHP configuration (EXIF is optional)
+4. For a quick local try: `DTHBOX_ALLOW_PRIVATE=1 php -S localhost:8000 index.php`
 
 ## Usage
 
@@ -53,8 +54,10 @@ A PHP-based image dithering tool that converts images to various grayscale forma
    - **Output Format**: Select the desired output format
    - **Grayscale Bits**: Set the number of grayscale levels (1-8 bits)
    - **Dithering Method**: Choose the dithering algorithm
-   - **Reduce Color Bleeding**: Enable for softer dithering effects
-   - **Resolution**: Set the output dimensions (WxH format)
+   - **Reduce Color Bleeding** and **Serpentine scanning**: Softer, more even dithering
+   - **Brightness**, **Contrast**, **Gamma**, **Invert**: Tone adjustments applied before dithering
+   - **Resolution**: Set the output dimensions (WxH, or a single number for the maximum size)
+   - **Fit** and **Rotate**: Crop or pad to the target size, and rotate in 90° steps
 4. Click "Process Image" to generate the dithered image
 
 ## API Usage
@@ -98,6 +101,12 @@ curl "http://localhost/index.php?col=apod&bits=1&dth=jv&fmt=gif" -o output.gif
 
 # Get a random image from a collection for an epaper display
 curl "http://localhost/index.php?col=any&bits=1&dth=jv&fmt=pbm&res=296x128" -o output.pbm
+
+# 2-bit Bayer 4x4, higher contrast, rotated, padded instead of cropped
+curl "http://localhost/index.php?url=https://example.com/image.jpg&bits=2&dth=by4&contrast=30&rotate=90&fit=contain&res=400x300" -o output.png
+
+# Send the raw image in the request body
+curl --data-binary @local_image.jpg "http://localhost/index.php?bits=1&dth=sr&fmt=png" -o output.png
 ```
 
 ## Security and limits
